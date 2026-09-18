@@ -123,6 +123,7 @@ def main():
         oracle_prism_revision=PRISM_REV, suite_sha256=SUITE_HASH, repetitions_tasks=1,
         native_executable_sha256=hashlib.sha256((BUILD/'dflash_server').read_bytes()).hexdigest(),
         native_source_revision=(ROOT/'source-revision.txt').read_text().strip(),
+        harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         template_sha256=hashlib.sha256((ROOT/'frozen-template.jinja').read_bytes()).hexdigest(),
         initial_health=health, models={n:dict(path=m,bytes=Path(m).stat().st_size) for n,m in MODELS.items()},
         verified_bonsai=json.loads(Path('/root/bonsai2-models/verified-models.json').read_text())))
