@@ -13,6 +13,13 @@ Scope: Qwen3.8-derived Bonsai 2 27B GGUF in PQ2_0, PTQ1_0 and upstream Q2_0 pack
 
 Each coherent implementation step is committed after its checks. Do not replace the vendored GGML tree wholesale: Lucebox has independent kernels, type IDs and graph operations to preserve. Do not reuse old-model cache state or timing calibration for Bonsai.
 
+## Current validation boundary
+
+- CPU packing round trips, independent wire-layout checks, and GGUF type-42 disambiguation pass. The codec test is registered as `bonsai_codecs`.
+- GPU dequantization functions and the three conversion registrations are ported from Prism `prism-v7`, commit `c1abda39458458ebfb4ec0722bd2224aab26e680`. Their numerical function bodies match that reference. HIP compilation and GPU execution are still pending; conversion support alone does not provide packed matrix multiplication.
+- Packed GPU matrix multiplication and Bonsai activation/embedding transforms remain to be integrated. The loader intentionally rejects Prism rotation metadata until that integration is complete.
+- No Bonsai inference correctness or performance result is claimed, and production is unchanged.
+
 ## Deployment constraints
 
 - Production remains unchanged until the implementation is validated.
