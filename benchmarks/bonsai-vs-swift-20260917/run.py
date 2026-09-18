@@ -13,10 +13,10 @@ ROOT = Path(__file__).resolve().parent
 PORT = 18217
 SUITE_HASH = 'f0b9120d5643f58ea6f40e9cdd9f183ff0e5f745317d49d838e59eae8fe85925'
 PRISM_REV = 'c1abda39458458ebfb4ec0722bd2224aab26e680'
-BUILD = Path('/root/bonsai2-bench/build/bin')
+BUILD = Path('/root/lucebox-bonsai/server/build-hip')
 SWIFT = '/code/models/swift-qwen/ukisai_Swift-Qwen3.8-27b-IQ4_XS.gguf'
 MODELS = {
-    'swift-prism': SWIFT,
+    'swift-native': SWIFT,
     'bonsai-pq2': '/root/bonsai2-models/Ternary-Bonsai-2-27B-PQ2_0.gguf',
     'bonsai-ptq1': '/root/bonsai2-models/Ternary-Bonsai-2-27B-PTQ1_0.gguf',
     'bonsai-q2': '/root/bonsai2-models/Ternary-Bonsai-2-27B-Q2_0-prism-fork-required.gguf',
@@ -76,17 +76,14 @@ def score(case, response):
 
 def launch_args(name, model):
     template = str(ROOT / 'frozen-template.jinja')
+    args = [str(BUILD / 'dflash_server'), model,
+        '--prefix-cache-slots', '0', '--max-ctx', '65536', '--cache-type-k', 'q8_0', '--cache-type-v', 'q8_0',
+        '--host', '127.0.0.1', '--port', str(PORT), '--model-name', 'comparison',
+        '--chat-template-file', template, '--default-max-tokens', '64000', '--think-max-tokens', '64000',
+        '--reasoning-effort-x-high', '64000', '--reasoning-effort-max', '64000', '--hard-limit-reply-budget', '0']
     if name == 'swift-dflash2':
-        return ['/opt/lucebox-concurrent/server/build-hip/dflash_server', model,
-            '--draft', '/code/models/qwen38/qwen38-dflash2-q8_0.gguf', '--draft-block-size', '16',
-            '--prefix-cache-slots', '0', '--max-ctx', '65536', '--cache-type-k', 'q8_0', '--cache-type-v', 'q8_0',
-            '--host', '127.0.0.1', '--port', str(PORT), '--model-name', 'comparison',
-            '--chat-template-file', template, '--default-max-tokens', '64000', '--think-max-tokens', '64000',
-            '--reasoning-effort-x-high', '64000', '--reasoning-effort-max', '64000', '--hard-limit-reply-budget', '0']
-    return [str(BUILD / 'llama-server'), '-m', model, '--host', '127.0.0.1', '--port', str(PORT),
-        '--alias', 'comparison', '-ngl', '99', '-c', '65536', '-np', '1', '-b', '512', '-ub', '512',
-        '-fa', 'on', '-ctk', 'q8_0', '-ctv', 'q8_0', '--jinja', '--chat-template-file', template,
-        '--metrics', '--reasoning-budget', '-1', '--no-context-shift', '--cache-ram', '0']
+        args += ['--draft', '/code/models/qwen38/qwen38-dflash2-q8_0.gguf', '--draft-block-size', '16']
+    return args
 
 
 def drain_gpu():
@@ -109,7 +106,10 @@ def stop_process(p):
 
 
 def main():
-    raise RuntimeError('Benchmark disabled: complete and qualify native Bonsai integration in Lucebox first; Prism is an oracle only')
+    qualification = json.loads(Path('/root/bonsai2-qualification/results.json').read_text())
+    assert {q['model'] for q in qualification} == {'pq2', 'ptq1', 'q2'}
+    assert all(q['reference']['passed'] and q['chunking']['passed'] for q in qualification)
+    save('qualification.json', qualification)
     suite_bytes = (ROOT / 'suite.json').read_bytes()
     assert hashlib.sha256(suite_bytes).hexdigest() == SUITE_HASH
     suite = json.loads(suite_bytes)
@@ -120,7 +120,9 @@ def main():
     args = {n: launch_args(n, m) for n, m in MODELS.items()}
     save('launch.json', args)
     save('provenance.json', dict(start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        prism_revision=PRISM_REV, suite_sha256=SUITE_HASH, repetitions_tasks=1, repetitions_micro=3,
+        oracle_prism_revision=PRISM_REV, suite_sha256=SUITE_HASH, repetitions_tasks=1,
+        native_executable_sha256=hashlib.sha256((BUILD/'dflash_server').read_bytes()).hexdigest(),
+        native_source_revision=(ROOT/'source-revision.txt').read_text().strip(),
         template_sha256=hashlib.sha256((ROOT/'frozen-template.jinja').read_bytes()).hexdigest(),
         initial_health=health, models={n:dict(path=m,bytes=Path(m).stat().st_size) for n,m in MODELS.items()},
         verified_bonsai=json.loads(Path('/root/bonsai2-models/verified-models.json').read_text())))
@@ -150,7 +152,7 @@ def main():
                     props = call('/props')
                     save(name + '-props.json', props)
                     assert props['default_generation_settings']['n_ctx'] == 65536, 'Unexpected context capacity'
-                    if name == 'swift-dflash2':
+                    if True:
                         envelope = props['budget_envelope']
                         assert envelope['default_max_tokens'] == 64000
                         assert envelope['think_max_tokens'] == 64000
@@ -177,8 +179,8 @@ def main():
                             reasoning_tokens_native=usage.get('completion_tokens_details', {}).get('reasoning_tokens'),
                             reasoning_text=reason, score=score(case, response), request=body, response=response,
                             vram_bytes_after=int(Path('/sys/class/drm/card5/device/mem_info_vram_used').read_text()))
-                        if name != 'swift-dflash2':
-                            row['reasoning_text_tokens'] = len(call('/tokenize', dict(content=reason, add_special=False))['tokens']) if reason else 0
+                        assert not timing.get('cache_hit'), 'Unexpected warm cache hit'
+                        assert timing.get('cached_prefix_tokens', 0) == 0, 'Unexpected cached prefix'
                         rows.append(row)
                         save('results.json', rows)
                         print(json.dumps({k:v for k,v in row.items() if k not in ('request','response','reasoning_text')}), flush=True)
@@ -189,17 +191,6 @@ def main():
             finally:
                 stop_process(p)
                 p = None
-                drain_gpu()
-            if name != 'swift-dflash2' and not any(f['backend'] == name for f in failures):
-                save('progress.json', dict(backend=name, phase='microbenchmark', completed=len(rows)))
-                cmd = [str(BUILD/'llama-bench'), '-m', model, '-p', '512,2048', '-n', '128', '-r', '3',
-                       '-ngl', '99', '-b', '512', '-ub', '512', '-fa', 'on', '-ctk', 'q8_0', '-ctv', 'q8_0', '-o', 'json']
-                with (ROOT/(name+'-micro.json')).open('w') as out, (ROOT/(name+'-micro.log')).open('w') as err:
-                    try:
-                        subprocess.run(cmd, env=ENV, stdout=out, stderr=err, check=True, timeout=600)
-                    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
-                        failures.append(dict(backend=name, error='microbenchmark: ' + str(e)))
-                        save('failures.json', failures)
                 drain_gpu()
     finally:
         stop_process(p)
