@@ -146,6 +146,14 @@ def main():
                     else:
                         raise RuntimeError('startup timeout: ' + name)
                     load_seconds = time.monotonic() - started
+                    props = call('/props')
+                    save(name + '-props.json', props)
+                    assert props['default_generation_settings']['n_ctx'] == 65536, 'Unexpected context capacity'
+                    if name == 'swift-dflash2':
+                        envelope = props['budget_envelope']
+                        assert envelope['default_max_tokens'] == 64000
+                        assert envelope['think_max_tokens'] == 64000
+                        assert envelope['hard_limit_reply_budget'] == 0
                     call('/v1/chat/completions', dict(model='comparison', messages=[dict(role='user', content='Reply only: ready')],
                          temperature=0, max_tokens=16, reasoning_effort='none', cache_prompt=False))
                     for case in suite['cases']:
@@ -186,7 +194,11 @@ def main():
                 cmd = [str(BUILD/'llama-bench'), '-m', model, '-p', '512,2048', '-n', '128', '-r', '3',
                        '-ngl', '99', '-b', '512', '-ub', '512', '-fa', 'on', '-ctk', 'q8_0', '-ctv', 'q8_0', '-o', 'json']
                 with (ROOT/(name+'-micro.json')).open('w') as out, (ROOT/(name+'-micro.log')).open('w') as err:
-                    subprocess.run(cmd, env=ENV, stdout=out, stderr=err, check=True, timeout=600)
+                    try:
+                        subprocess.run(cmd, env=ENV, stdout=out, stderr=err, check=True, timeout=600)
+                    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                        failures.append(dict(backend=name, error='microbenchmark: ' + str(e)))
+                        save('failures.json', failures)
                 drain_gpu()
     finally:
         stop_process(p)
