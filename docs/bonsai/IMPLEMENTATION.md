@@ -16,6 +16,6 @@ Each coherent implementation step is committed after its checks. Do not replace 
 ## Deployment constraints
 
 - Production remains unchanged until the implementation is validated.
-- Download formats sequentially because /code currently has limited capacity; retain existing models.
+- Download formats sequentially into `/root/bonsai2-models`, as requested; retain existing models. Run `python3 scripts/bonsai/download_models.py /root/bonsai2-models` to fetch pinned revisions and verify their published SHA256 hashes before using them.
 - Packed weights must remain packed in GPU memory for a meaningful packing performance comparison.
 - Architecture compatibility is not proof of drafter acceptance or exact sampled-output parity.
