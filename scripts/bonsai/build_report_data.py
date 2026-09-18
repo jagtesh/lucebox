@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import statistics
+import re
 import sys
 ROOT=Path(__file__).resolve().parents[2]/'benchmarks/bonsai-vs-swift-20260917'
 spec=importlib.util.spec_from_file_location('analysis', ROOT/'analyze.py')
@@ -20,6 +21,24 @@ for b in list(labels):
  if b.startswith('bonsai'): labels[b+'-dflash2']=labels[b]
 def mode(b):return 'DFlash2' if b.endswith('-dflash2') else 'Target only'
 metadata=json.loads((ROOT/'provenance.json').read_text())
+# Log counters expose adaptive plain-decode bursts hidden by spec_decode_ran.
+def log_counters(path):
+    out={};current=None;stats={}
+    if not path.exists(): return out
+    for line in path.read_text().splitlines():
+        m=re.search(r'chat START (\S+)',line)
+        if m: current=m[1];stats={}
+        m=re.search(r'\[spec-decode\].*steps=(\d+) accepted=(\d+)/(\d+)',line)
+        if m: stats=dict(steps=int(m[1]),accepted=int(m[2]),offered=int(m[3]),plain_steps=0)
+        m=re.search(r'adaptive: (\d+) of (\d+) steps ran as plain decode',line)
+        if m: stats.update(plain_steps=int(m[1]))
+        m=re.search(r'chat DONE (\S+)',line)
+        if m and m[1]==current and stats: out[current]=stats
+    return out
+telemetry={}
+for folder in ('','dflash-followup','dflash-remaining'):
+    for path in (ROOT/folder).glob('*-dflash2.log'):
+        telemetry[path.stem]=log_counters(path)
 compact=[];suites=[];speculative=[]
 for s in summary:
  b=s['backend'];rr=[r for r in rows if r['backend']==b and (s['subset']=='all' or r['suite']==s['subset'])]
@@ -37,7 +56,10 @@ for s in summary:
  if b.endswith('-dflash2') and s['subset']=='all':
   rates=[r['response']['usage']['accept_rate'] for r in rr if r['response']['usage'].get('spec_decode_ran')]
   base=next((x for x in all_s if x['backend']==b.removesuffix('-dflash2') or b=='swift-dflash2' and x['backend']=='swift-native'),None)
-  speculative.append(dict(model=labels[b],requests=len(rr),speculative_requests=len(rates),acceptance_pct=statistics.median(rates)*100 if rates else None,
+  counters=[telemetry.get(b,{}).get(r['response']['id']) for r in rr]
+  known=[c for c in counters if c]
+  steps=sum(c['steps'] for c in known);plain=sum(c['plain_steps'] for c in known)
+  speculative.append(dict(counter_coverage=f'{len(known)}/{len(rr)}',plain_step_pct=100*plain/steps if steps else None,plain_steps=plain if known else None,total_steps=steps if known else None,model=labels[b],requests=len(rr),speculative_requests=len(rates),acceptance_pct=statistics.median(rates)*100 if rates else None,
    acceptance_min_pct=min(rates)*100 if rates else None,acceptance_max_pct=max(rates)*100 if rates else None,
    decode_speedup=s['decode_tps']/base['decode_tps'] if base and base['decode_tps'] and s['complete'] else None,
    wall_speedup=base['wall_seconds']/s['wall_seconds'] if base and s['wall_seconds'] and s['complete'] else None))
@@ -56,7 +78,7 @@ protocol=[dict(task=c['id'],suite=c['suite'],input=json.dumps(c['messages'],inde
 qualification=[dict(model=x['model'],cosine=x['reference']['cosine'],normalized_rmse_pct=x['reference']['nrmse']*100,top5_overlap=x['reference']['top5_overlap'],reference_pass=x['reference']['passed'],incremental_pass=x['chunking']['passed']) for x in json.loads((ROOT/'qualification/numerical-results.json').read_text())]
 files=[f for f in ('results.json','dflash-followup/results.json','dflash-remaining/results.json') if (ROOT/f).exists()]
 source=dict(type='local benchmark',title='Native Lucebox measurements on R9700',files=files,
- evidenceFlow=[dict(title='Frozen protocol',detail='16 exact prompts and original rubrics from suite.json; SHA256 f0b9120d5643f58ea6f40e9cdd9f183ff0e5f745317d49d838e59eae8fe85925.'),dict(title='Execution',detail='Sequential native Lucebox runs with Q8 GPU K/V, 65536 context, xhigh thinking, temperature 0, seed 42 and 64000 output ceiling. Model load and warmup excluded.'),dict(title='Aggregation',detail='Sum native prefill/decode and wall time per configuration; aggregate decode rate = sum(output tokens) / sum(decode seconds). Native thinking count from usage. Acceptance is median per-request rate, not pooled.')],
+ evidenceFlow=[dict(title='Frozen protocol',detail='16 exact prompts and original rubrics from suite.json; SHA256 f0b9120d5643f58ea6f40e9cdd9f183ff0e5f745317d49d838e59eae8fe85925.'),dict(title='Execution',detail='Sequential native Lucebox runs with Q8 GPU K/V, 65536 context, xhigh thinking, temperature 0, seed 42 and 64000 output ceiling. Model load and warmup excluded.'),dict(title='Aggregation',detail='Sum native prefill/decode and wall time per configuration; aggregate decode rate = sum(output tokens) / sum(decode seconds). Native thinking count from usage. Acceptance is median per-request native accepted/emitted verifier positions divided by offered positions, including the always-committed seed; not pure drafter-match probability. Adaptive plain-step counters are parsed from preserved server logs.')],
  caveats=['One run per task/configuration; no confidence intervals or randomized run order.','Six quality tasks score exact format and answers. Ten article tasks score completion only.','VRAM is observed after requests, not peak memory.','Native prefill and decode are phases of short cold prompts; these measurements do not establish long-context performance.'])
 def query(data,extra=None):return dict(rows=data,source=source| (extra or {}),methods=[dict(language='Python',code='scripts/bonsai/build_report_data.py and benchmarks/bonsai-vs-swift-20260917/analyze.py; source measurements preserved unchanged.')])
 cutoff=max((ROOT/f/'results.json').stat().st_mtime for f in ('','dflash-followup','dflash-remaining') if (ROOT/f/'results.json').exists())
@@ -66,9 +88,10 @@ best_rate=max((x for x in compact if x['complete']),key=lambda x:x['decode_tps']
 best_time=min((x for x in compact if x['complete']),key=lambda x:x['wall_s'])
 quality=[r for r in rows if r['suite']=='quality'];passes=sum(r['score']['pass'] is True for r in quality)
 findings=f'''## Executive Summary\n\n- **{best_rate['configuration']} has the highest measured generation rate: {best_rate['decode_tps']:.1f} tokens/s.** {best_time['configuration']} has the lowest suite time: {best_time['wall_s']:.1f} seconds across 16 tasks.\n- **PQ2 and Q2 are effectively tied without DFlash2** at 41.1 and 40.8 tokens/s. PTQ1 uses less memory but reaches 32.0 tokens/s in this implementation.\n- **{passes}/{len(quality)} measured quality checks passed**, including strict JSON and tool formatting. The ten article tasks measure completion, not coding correctness.\n- {'All 128 requested task runs are complete.' if finished else f'{len(rows)}/128 task runs are recorded; the remaining DFlash2 results are pending.'} These are single-pass observations, not statistically established rankings.'''
-methods='''## Method and interpretation\n\nEvery timed entry runs the same native Lucebox executable on one Radeon AI PRO R9700 (gfx1201, 32 GB). The inputs, frozen chat template and scoring rules are identical. All matched prompt-token counts are checked. Thinking is enabled with xhigh requested; actual thinking length varies by model and numerical path.\n\nTemperature is 0 and seed is 42. Context is 65,536 tokens, with a 64,000-token output ceiling for safety. No response reaching the length ceiling counts as a normal completion. Prefix slots and hybrid caching are disabled; measured cached-prefix counts must remain zero. Idle prefill batches are 512 tokens. DFlash2 uses the existing Qwen Q8 drafter with block size 16. GPU K/V are Q8 in every entry.\n\n**Definitions:** prefill is the backend's prompt-processing phase; decode is its generation phase. Wall time includes request overhead, but excludes model loading and warmup. Output counts include thinking; other output tokens may include control tokens. Throughput is total output tokens divided by total decode seconds, not the average of individual request rates. Draft acceptance is reported as a median of per-request native rates.\n\nOne run per task/configuration, fixed configuration order, and different generated lengths limit the comparison. These short prompts do not test long-context compression, cache reuse, or production concurrency. Post-request GPU allocation is not peak VRAM. The private build uses FA_ALL_QUANTS=OFF with the same Q8 attention kernels for every entry. No production executable or configuration is replaced.'''
+recommendations="## Practical conclusion\n\nKeep Swift with DFlash2 as the latency baseline while this comparison is being completed. Bonsai PQ2 and Q2 offer substantially lower memory use, but a smaller GGUF does not guarantee faster task completion. PTQ1's speculative path warrants profiling before deployment; the measured slowdown is real, but these timings alone do not identify the responsible kernel.\n\nBefore making a general quality decision, use a broader coding/retrieval suite. This experiment deliberately preserves the original six strict checks and ten completion-only article prompts."
+methods='''## Method and interpretation\n\nEvery timed entry runs the same native Lucebox executable on one Radeon AI PRO R9700 (gfx1201, 32 GB). The inputs, frozen chat template and scoring rules are identical. All matched prompt-token counts are checked. Thinking is enabled with xhigh requested; actual thinking length varies by model and numerical path.\n\nTemperature is 0 and seed is 42. Context is 65,536 tokens, with a 64,000-token output ceiling for safety. No response reaching the length ceiling counts as a normal completion. Prefix slots and hybrid caching are disabled; measured cached-prefix counts must remain zero. Idle prefill batches are 512 tokens. DFlash2 uses the existing Qwen Q8 drafter with block size 16. GPU K/V are Q8 in every entry.\n\n**Definitions:** prefill is the backend's prompt-processing phase; decode is its generation phase. Wall time includes request overhead, but excludes model loading and warmup. Output counts include thinking; other output tokens may include control tokens. Throughput is total output tokens divided by total decode seconds, not the average of individual request rates. The native acceptance metric includes the always-committed seed position; it is not pure drafter-token match probability. Its median is taken across requests. DFlash2 retains the existing adaptive controller, which may execute plain-decode bursts; their fraction is reported from server logs.\n\nOne run per task/configuration, fixed configuration order, and different generated lengths limit the comparison. These short prompts do not test long-context compression, cache reuse, or production concurrency. Post-request GPU allocation is not peak VRAM. The private build uses FA_ALL_QUANTS=OFF with the same Q8 attention kernels for every entry. No production executable or configuration is replaced.'''
 output=Path(sys.argv[1]);old=json.loads(output.read_text()) if output.exists() else {}
-snapshot=dict(id=old.get('id'),surface='report',title='Bonsai versus Swift: speed, thinking and DFlash2',generatedAt=when,report={'asOf':when[:10]},status='reviewed',buildStatus='creating',filters=[],finding=findings,methodsText=methods,
+snapshot=dict(id=old.get('id'),surface='report',title='Bonsai versus Swift: speed, thinking and DFlash2',generatedAt=when,report={'asOf':when[:10]},status='reviewed',buildStatus='creating',filters=[],finding=findings,methodsText=methods,recommendations=recommendations,
  queries={'summary':query(compact),'suites':query(suites),'tasks':query(detail),'speculation':query(speculative),'protocol':query(protocol,{'files':['suite.json']}),'qualification':query(qualification,{'files':['qualification/numerical-results.json'],'caveats':['Fixed 17-token sequence; finite numerical qualification is not proof of identical long generation.']})})
 snapshot['queries']['tasks']['payloadColumns']=['raw_response']
 for name,ids,definition in [('summary',['overview','throughput','wall','memory','tokens','findings'],'Configuration totals over the measured subset. Null means unavailable; partial coverage is explicit.'),('suites',['suite-breakdown'],'Separate totals for the six quality and ten completion-only speed tasks.'),('tasks',['task-details','responses'],'One native request per configuration and frozen task; no retries replace failures.'),('speculation',['draft-results'],'Only actual speculative requests contribute to per-request acceptance statistics.')]:
