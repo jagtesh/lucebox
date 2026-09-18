@@ -902,8 +902,14 @@ if(DFLASH27B_TESTS)
     add_test(NAME bonsai_codecs COMMAND test_bonsai_codecs)
 
     add_executable(test_bonsai_wht test/test_bonsai_wht.cpp)
+    target_include_directories(test_bonsai_wht PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_link_libraries(test_bonsai_wht PRIVATE ggml)
     add_test(NAME bonsai_wht_cpu COMMAND test_bonsai_wht)
+
+    add_executable(test_bonsai_metadata test/test_bonsai_metadata.cpp)
+    target_include_directories(test_bonsai_metadata PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_link_libraries(test_bonsai_metadata PRIVATE ggml)
+    add_test(NAME bonsai_metadata COMMAND test_bonsai_metadata)
 
     add_executable(
         test_kernel_qualification_core
