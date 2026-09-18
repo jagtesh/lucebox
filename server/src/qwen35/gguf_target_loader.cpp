@@ -332,6 +332,14 @@ bool load_target_gguf_partial(const std::string & path,
         return false;
     }
 
+    // Fail closed while Bonsai graph support is being integrated. Recognizing
+    // the packing must never permit inference without the activation transform.
+    if (gguf_find_key(gctx, "prism.hadamard.version") >= 0) {
+        set_last_error("Bonsai activation transforms are not enabled in this build");
+        gguf_free(gctx);
+        return false;
+    }
+
     // Validate arch + the dimensions we hardcode everywhere.
     std::string arch_str;
     bool is_moe = false;

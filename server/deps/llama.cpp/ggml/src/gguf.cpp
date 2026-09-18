@@ -648,6 +648,12 @@ struct gguf_context * gguf_init_from_file_ptr(FILE * file, struct gguf_init_para
         {
             ok = ok && gr.read(info.t.type);
 
+            // Bonsai uses upstream Q2_0 wire id 42; this fork uses that id for
+            // TurboQuant KV. Only remap files explicitly declaring Prism rotations.
+            if (ok && (int) info.t.type == 42 && gguf_find_key(ctx, "prism.hadamard.version") >= 0) {
+                info.t.type = GGML_TYPE_Q2_0;
+            }
+
             // check that tensor type is within defined range
             if (info.t.type < 0 || info.t.type >= GGML_TYPE_COUNT) {
                 GGML_LOG_ERROR("%s: tensor '%s' has invalid ggml type %d. should be in [0, %d)\n",
