@@ -1,0 +1,86 @@
+{
+  "pq2-luce-1.f32": {
+    "bytes": 993280,
+    "sha256": "effa48d073c155a18d8cb4316fd7d174d5d4dfc298c228b67628f8f134d4352c"
+  },
+  "pq2-luce-1.log": {
+    "bytes": 219,
+    "sha256": "f806edd5747d41fb20f76345270996af4380d1e4ffeeac89e932ac1b7de11af6"
+  },
+  "pq2-luce-32.f32": {
+    "bytes": 993280,
+    "sha256": "cd5c210cde2fdddc7ace1a1d6ed9bf7cc9bf43bfab3d3d57c20a3d8c8d1a7fd3"
+  },
+  "pq2-luce-32.log": {
+    "bytes": 219,
+    "sha256": "f806edd5747d41fb20f76345270996af4380d1e4ffeeac89e932ac1b7de11af6"
+  },
+  "pq2-prism-32.f32": {
+    "bytes": 993280,
+    "sha256": "0994381a2eb6b2101d0e16ac8eacf89ebc329dd8fb78da8dad90a8406f97065d"
+  },
+  "pq2-prism-32.log": {
+    "bytes": 126584,
+    "sha256": "f901e2da54d0336af230d5e814607dfe4566e2011f3857568351b0d97f5f5ae3"
+  },
+  "progress.json": {
+    "bytes": 40,
+    "sha256": "8075d888857dd851dfb51af4c362216863cb4963b066d957bfb8640929f4c4ef"
+  },
+  "ptq1-luce-1.f32": {
+    "bytes": 993280,
+    "sha256": "69b78699fff5ffda760dbf9edca5ab0f50786cc8794cefe4dfdb444bf26127ac"
+  },
+  "ptq1-luce-1.log": {
+    "bytes": 219,
+    "sha256": "f806edd5747d41fb20f76345270996af4380d1e4ffeeac89e932ac1b7de11af6"
+  },
+  "ptq1-luce-32.f32": {
+    "bytes": 993280,
+    "sha256": "85a9a7ea1ee5a4774b37a06fe54cb1692678405295823467d4dead536f3e8f68"
+  },
+  "ptq1-luce-32.log": {
+    "bytes": 219,
+    "sha256": "f806edd5747d41fb20f76345270996af4380d1e4ffeeac89e932ac1b7de11af6"
+  },
+  "ptq1-prism-32.f32": {
+    "bytes": 993280,
+    "sha256": "f3e20595d071ba4b3cb2d712f5a126bfce6af1fdfa2b958ab7bead490f969ca8"
+  },
+  "ptq1-prism-32.log": {
+    "bytes": 126596,
+    "sha256": "0e4b49d75b85e118948d6e7394c415bb75bcf850ed90b4978789105663eab483"
+  },
+  "q2-luce-1.f32": {
+    "bytes": 993280,
+    "sha256": "effa48d073c155a18d8cb4316fd7d174d5d4dfc298c228b67628f8f134d4352c"
+  },
+  "q2-luce-1.log": {
+    "bytes": 219,
+    "sha256": "f806edd5747d41fb20f76345270996af4380d1e4ffeeac89e932ac1b7de11af6"
+  },
+  "q2-luce-32.f32": {
+    "bytes": 993280,
+    "sha256": "cd5c210cde2fdddc7ace1a1d6ed9bf7cc9bf43bfab3d3d57c20a3d8c8d1a7fd3"
+  },
+  "q2-luce-32.log": {
+    "bytes": 219,
+    "sha256": "f806edd5747d41fb20f76345270996af4380d1e4ffeeac89e932ac1b7de11af6"
+  },
+  "q2-prism-32.f32": {
+    "bytes": 993280,
+    "sha256": "0994381a2eb6b2101d0e16ac8eacf89ebc329dd8fb78da8dad90a8406f97065d"
+  },
+  "q2-prism-32.log": {
+    "bytes": 126576,
+    "sha256": "5cde2af293f14d21feea461bfea5a9b96ff85d7e0c79da94cd7f77453169c30e"
+  },
+  "results.json": {
+    "bytes": 2523,
+    "sha256": "b46c2b79550688c6be5dc83ff02ed7d74ed3c8523fb768ae7f4be8eea08be4c5"
+  },
+  "tokens.txt": {
+    "bytes": 79,
+    "sha256": "96d987c2caee01121da26d604937caa3a57fe4b882febe6667eebbd33fab74da"
+  }
+}
