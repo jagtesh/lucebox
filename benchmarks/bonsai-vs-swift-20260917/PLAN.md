@@ -23,3 +23,7 @@ Reuse swift-controlled-v1/suite.json byte for byte (SHA256 f0b9120d5643f58ea6f40
 Private port 18217. Require production idle before stopping it. Independent systemd ExecStopPost plus Python finally restore lucebox.service, with a bounded runtime. Preserve production configuration, models and executable. Never overlap GPU workloads.
 
 Store model hashes, executable/source identities, exact arguments, logs, responses and errors. Record failures and continue remaining entries only after verified memory drainage. Never treat missing timing as zero or compare partial totals against complete suites. Report quality and speed subsets separately, thinking/output counts and task-level wall time alongside generation throughput.
+
+## DFlash2 follow-up
+
+After the target-only comparison, select the Bonsai packing with the highest aggregate decode tokens/second across all 16 tasks, provided all six quality checks pass and all tasks complete. Run that packing with the existing Qwen DFlash2 drafter (block 16), repeating the same 16 inputs/rubrics. Preserve both phases separately. This tests the previously requested drafter compatibility; it does not assume that shared model ancestry guarantees good acceptance. If no packing qualifies, stop this follow-up and report the failed gate.

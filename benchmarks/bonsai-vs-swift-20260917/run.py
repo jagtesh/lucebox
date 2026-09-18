@@ -81,7 +81,7 @@ def launch_args(name, model):
         '--host', '127.0.0.1', '--port', str(PORT), '--model-name', 'comparison',
         '--chat-template-file', template, '--default-max-tokens', '64000', '--think-max-tokens', '64000',
         '--reasoning-effort-x-high', '64000', '--reasoning-effort-max', '64000', '--hard-limit-reply-budget', '0']
-    if name == 'swift-dflash2':
+    if name.endswith('-dflash2'):
         args += ['--draft', '/code/models/qwen38/qwen38-dflash2-q8_0.gguf', '--draft-block-size', '16']
     return args
 
@@ -152,11 +152,10 @@ def main():
                     props = call('/props')
                     save(name + '-props.json', props)
                     assert props['default_generation_settings']['n_ctx'] == 65536, 'Unexpected context capacity'
-                    if True:
-                        envelope = props['budget_envelope']
-                        assert envelope['default_max_tokens'] == 64000
-                        assert envelope['think_max_tokens'] == 64000
-                        assert envelope['hard_limit_reply_budget'] == 0
+                    envelope = props['budget_envelope']
+                    assert envelope['default_max_tokens'] == 64000
+                    assert envelope['think_max_tokens'] == 64000
+                    assert envelope['hard_limit_reply_budget'] == 0
                     call('/v1/chat/completions', dict(model='comparison', messages=[dict(role='user', content='Reply only: ready')],
                          temperature=0, max_tokens=16, reasoning_effort='none', cache_prompt=False))
                     for case in suite['cases']:
