@@ -109,6 +109,7 @@ def stop_process(p):
 
 
 def main():
+    raise RuntimeError('Benchmark disabled: complete and qualify native Bonsai integration in Lucebox first; Prism is an oracle only')
     suite_bytes = (ROOT / 'suite.json').read_bytes()
     assert hashlib.sha256(suite_bytes).hexdigest() == SUITE_HASH
     suite = json.loads(suite_bytes)

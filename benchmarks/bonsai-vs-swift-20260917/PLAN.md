@@ -1,3 +1,7 @@
+# Execution gate: native Lucebox integration first
+
+User correction: do not run the reference-runtime benchmark matrix below. It is retained as historical setup only. `run.py` is disabled until its model entries use the qualified Lucebox backend. Prism may be used for numerical correctness checks, never as a substitute for the requested Lucebox performance comparison. No measured benchmark was started.
+
 # Bonsai packing versus Swift: frozen comparison
 
 ## Scope
