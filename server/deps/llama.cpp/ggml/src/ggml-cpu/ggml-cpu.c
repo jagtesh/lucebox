@@ -2272,6 +2272,28 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
             {
                 ggml_compute_forward_glu(params, tensor);
             } break;
+        case GGML_OP_BONSAI_WHT:
+            {
+                const int block = ggml_get_op_params_i32(tensor, 0);
+                const float * src = (const float *) tensor->src[0]->data;
+                float * dst = (float *) tensor->data;
+                const int64_t count = ggml_nelements(tensor) / block;
+                const float scale = 1.0f / sqrtf((float) block);
+                for (int64_t b = params->ith; b < count; b += params->nth) {
+                    float * y = dst + b * block;
+                    memcpy(y, src + b * block, block * sizeof(float));
+                    for (int stride = 1; stride < block; stride *= 2) {
+                        for (int base = 0; base < block; base += 2 * stride) {
+                            for (int j = 0; j < stride; ++j) {
+                                const float a = y[base+j], c = y[base+j+stride];
+                                y[base+j] = a+c;
+                                y[base+j+stride] = a-c;
+                            }
+                        }
+                    }
+                    for (int j = 0; j < block; ++j) y[j] *= scale;
+                }
+            } break;
         case GGML_OP_TURBO_WHT:
             {
                 // CUDA-only op; CPU fallback is identity (no rotation)
@@ -2545,6 +2567,7 @@ static int ggml_get_n_tasks(struct ggml_tensor * node, int n_threads) {
                     break;
             }
             break;
+        case GGML_OP_BONSAI_WHT:
         case GGML_OP_TURBO_WHT:
             {
                 n_tasks = n_threads;

@@ -627,6 +627,8 @@ extern "C" {
 
         GGML_OP_DS4_MOE_COMBINE,
 
+        GGML_OP_BONSAI_WHT, // normalized block Hadamard, no implicit signs
+
         GGML_OP_COUNT,
     };
 
@@ -2590,6 +2592,11 @@ extern "C" {
             struct ggml_tensor  * tree_sizes,
             int                   tree_scratch_base,
             int                   tree_scratch_stride);
+
+    // Normalized Sylvester Hadamard independently on contiguous blocks.
+    // Sign vectors and grouped-head permutations are explicit graph operations.
+    GGML_API struct ggml_tensor * ggml_bonsai_wht(
+            struct ggml_context * ctx, struct ggml_tensor * a, int block_size);
 
     // TurboQuant FWHT rotation. direction: 0 = forward, 1 = inverse.
     // Applies signs1 -> FWHT -> signs2 (forward) or signs2 -> FWHT -> signs1 (inverse).

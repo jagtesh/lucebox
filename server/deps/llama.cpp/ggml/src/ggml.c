@@ -1220,9 +1220,10 @@ static const char * GGML_OP_NAME[GGML_OP_COUNT] = {
     "PAGED_ATTN",
 
     "DS4_MOE_COMBINE",
+    "BONSAI_WHT",
 };
 
-static_assert(GGML_OP_COUNT == 106, "GGML_OP_COUNT != 106");
+static_assert(GGML_OP_COUNT == 107, "GGML_OP_COUNT != 107");
 
 static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
     "none",
@@ -1349,9 +1350,10 @@ static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
     "paged_attn(q,k,v)",
 
     "ds4_moe_combine(down,w,shared)",
+    "bonsai_wht(x)",
 };
 
-static_assert(GGML_OP_COUNT == 106, "GGML_OP_COUNT != 106");
+static_assert(GGML_OP_COUNT == 107, "GGML_OP_COUNT != 107");
 
 static_assert(GGML_OP_POOL_COUNT == 2, "GGML_OP_POOL_COUNT != 2");
 
@@ -8899,6 +8901,18 @@ bool ggml_threadpool_params_match(const struct ggml_threadpool_params * p0, cons
     if (p0->poll           != p1->poll       )    return false;
     if (p0->strict_cpu     != p1->strict_cpu )    return false;
     return memcmp(p0->cpumask, p1->cpumask, GGML_MAX_N_THREADS) == 0;
+}
+
+struct ggml_tensor * ggml_bonsai_wht(
+        struct ggml_context * ctx, struct ggml_tensor * a, int block_size) {
+    GGML_ASSERT(a->type == GGML_TYPE_F32 && ggml_is_contiguous(a));
+    GGML_ASSERT(block_size >= 2 && block_size <= 1024 && (block_size & (block_size - 1)) == 0);
+    GGML_ASSERT(a->ne[0] % block_size == 0);
+    struct ggml_tensor * result = ggml_dup_tensor(ctx, a);
+    result->op = GGML_OP_BONSAI_WHT;
+    result->src[0] = a;
+    ggml_set_op_params_i32(result, 0, block_size);
+    return result;
 }
 
 struct ggml_tensor * ggml_turbo_wht(

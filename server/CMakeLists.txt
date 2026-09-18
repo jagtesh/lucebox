@@ -901,6 +901,10 @@ if(DFLASH27B_TESTS)
     target_link_libraries(test_bonsai_codecs PRIVATE ggml-base)
     add_test(NAME bonsai_codecs COMMAND test_bonsai_codecs)
 
+    add_executable(test_bonsai_wht test/test_bonsai_wht.cpp)
+    target_link_libraries(test_bonsai_wht PRIVATE ggml)
+    add_test(NAME bonsai_wht_cpu COMMAND test_bonsai_wht)
+
     add_executable(
         test_kernel_qualification_core
         test/test_kernel_qualification_core.cpp)

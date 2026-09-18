@@ -27,6 +27,7 @@
 #include "ggml-cuda/paged-attn.cuh"
 #include "ggml-cuda/getrows.cuh"
 #include "ggml-cuda/turbo-wht.cuh"
+#include "ggml-cuda/bonsai-wht.cuh"
 #include "ggml-cuda/im2col.cuh"
 #include "ggml-cuda/mmf.cuh"
 #include "ggml-cuda/mmq.cuh"
@@ -3442,6 +3443,9 @@ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct gg
         case GGML_OP_NORM:
             ggml_cuda_op_norm(ctx, dst);
             break;
+        case GGML_OP_BONSAI_WHT:
+            ggml_cuda_op_bonsai_wht(ctx, dst);
+            break;
         case GGML_OP_TURBO_WHT:
             ggml_cuda_op_turbo_wht(ctx, dst);
             break;
@@ -6075,6 +6079,8 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
                     return false;
             }
             break;
+        case GGML_OP_BONSAI_WHT:
+            return op->src[0]->type == GGML_TYPE_F32 && ggml_is_contiguous(op->src[0]);
         case GGML_OP_TURBO_WHT:
             // Only requires dim0 contiguous (nb[0] == sizeof(float));
             // the kernel handles strided dim1/dim2 via separate src/dst strides.
