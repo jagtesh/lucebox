@@ -1094,9 +1094,9 @@ bool ensure_ssm_snapshot(TargetCache & c, ggml_backend_t backend) {
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 static ggml_tensor * build_swiglu_ffn(ggml_context * ctx, ggml_tensor * cur,
-                                      const TargetLayer & L) {
-    ggml_tensor * gate = ggml_mul_mat(ctx, L.w_gate, cur);   // [inter, n_tokens]
-    ggml_tensor * up   = ggml_mul_mat(ctx, L.w_up, cur);
+                                      const TargetLayer & L, const TargetWeights & w) {
+    ggml_tensor * gate = bonsai_matmul(ctx, w.bonsai.get(), L.w_gate, cur);   // [inter, n_tokens]
+    ggml_tensor * up   = bonsai_matmul(ctx, w.bonsai.get(), L.w_up, cur);
     ggml_tensor * gu;
     if (L.w_gate_s == 1.0f && L.w_up_s == 1.0f) {
         // GLU node right after the two matmuls: the CUDA/HIP backend fuses
@@ -1108,7 +1108,7 @@ static ggml_tensor * build_swiglu_ffn(ggml_context * ctx, ggml_tensor * cur,
         up   = apply_scale2(ctx, up, L.w_up_s);
         gu   = ggml_mul(ctx, gate, up);
     }
-    return apply_scale2(ctx, ggml_mul_mat(ctx, L.w_down, gu), L.w_down_s);                  // [hidden, n_tokens]
+    return apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.w_down, gu), L.w_down_s);                  // [hidden, n_tokens]
 }
 
 // Full-attention block (matches llama.cpp's build_layer_attn for qwen35)
@@ -1169,7 +1169,7 @@ static ggml_tensor * build_full_attn_block(
     const int n_head_kv = w.n_head_kv;
     const int q_dim = head_dim * n_head;
     // ── Q projection (packed Q || gate), shape [2*q_dim, n_tokens]
-    ggml_tensor * QG = apply_scale2(ctx, ggml_mul_mat(ctx, L.wq, cur), L.wq_s);
+    ggml_tensor * QG = apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.wq, cur), L.wq_s);
     // Reshape to [head_dim*2, n_head, n_tokens] so we can view the Q and gate halves
     QG = ggml_reshape_3d(ctx, QG, head_dim * 2, n_head, n_tokens);
 
@@ -1191,8 +1191,8 @@ static ggml_tensor * build_full_attn_block(
     gate = ggml_cont_2d(ctx, gate, q_dim, n_tokens);  // [q_dim, n_tokens]
 
     // ── K and V projections
-    ggml_tensor * Kcur = apply_scale2(ctx, ggml_mul_mat(ctx, L.wk, cur), L.wk_s);
-    ggml_tensor * Vcur = apply_scale2(ctx, ggml_mul_mat(ctx, L.wv, cur), L.wv_s);
+    ggml_tensor * Kcur = apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.wk, cur), L.wk_s);
+    ggml_tensor * Vcur = apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.wv, cur), L.wv_s);
 
     Kcur = ggml_reshape_3d(ctx, Kcur, head_dim, n_head_kv, n_tokens);
     Kcur = rms_norm_mul(ctx, Kcur, L.k_norm, w.rms_eps);
@@ -1468,7 +1468,7 @@ static ggml_tensor * build_full_attn_block(
     attn = ggml_mul(ctx, attn, gate_sig);
 
     // ── Output projection
-    attn = apply_scale2(ctx, ggml_mul_mat(ctx, L.wo, attn), L.wo_s);
+    attn = apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.wo, attn), L.wo_s);
     return attn;
 }
 
@@ -1596,8 +1596,8 @@ static ggml_tensor * build_delta_net_block(
         z      = ggml_view_2d(ctx, qkvz, n_z, n_tokens, qkvz->nb[1], 0);
         qkv_2d = ggml_view_2d(ctx, qkvz, conv_channels, n_tokens, qkvz->nb[1], (size_t)n_z * e);
     } else {
-        qkv_2d = apply_scale2(ctx, ggml_mul_mat(ctx, L.wqkv, cur), L.wqkv_s);
-        z      = apply_scale2(ctx, ggml_mul_mat(ctx, L.wqkv_gate, cur), L.wqkv_gate_s);
+        qkv_2d = apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.wqkv, cur), L.wqkv_s);
+        z      = apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.wqkv_gate, cur), L.wqkv_gate_s);
     }
 
     // beta  = ssm_beta @ cur           [dt_rank, n_tokens]
@@ -2231,7 +2231,7 @@ after_delta_net:
     for (int si = 1; si < n_segs; si++) {
         flat_all = ggml_concat(ctx, flat_all, flat[(size_t)si], 1);
     }
-    ggml_tensor * out = apply_scale2(ctx, ggml_mul_mat(ctx, L.ssm_out, flat_all), L.ssm_out_s);
+    ggml_tensor * out = apply_scale2(ctx, bonsai_matmul(ctx, w.bonsai.get(), L.ssm_out, flat_all, head_v_dim, num_k_heads, num_v_heads/num_k_heads), L.ssm_out_s);
     out = ggml_reshape_2d(ctx, out, w.n_embd, n_tokens);
     return out;
 }
@@ -2321,7 +2321,7 @@ static ggml_tensor * build_single_layer(
     ggml_tensor * moe_selected = nullptr;
     ggml_tensor * ffn  = L.ffn_gate_inp
         ? build_qwen35moe_ffn(ctx, post, w, L, &moe_selected)
-        : build_swiglu_ffn(ctx, post, L);
+        : build_swiglu_ffn(ctx, post, L, w);
     if (moe_selected_out) {
         *moe_selected_out = moe_selected;
     }
@@ -2569,7 +2569,7 @@ QwenGraphOutputs build_qwen35_graph(
         ggml_tensor * ffn = L.ffn_gate_inp
             ? build_qwen35moe_ffn(ctx, post, w, L,
                                   in.capture_moe_router ? &moe_selected : nullptr)
-            : build_swiglu_ffn(ctx, post, L);
+            : build_swiglu_ffn(ctx, post, L, w);
         if (in.capture_moe_router && moe_selected) {
             ggml_set_output(moe_selected);
             og_early.moe_selected[(size_t)il] = moe_selected;
@@ -2670,7 +2670,7 @@ QwenGraphOutputs build_qwen35_graph(
                                (size_t)(n_tokens - in.logits_tail_rows) *
                                    out->nb[1]);
         }
-        logits = ggml_mul_mat(ctx, w.output, out);
+        logits = bonsai_matmul(ctx, w.bonsai.get(), w.output, out);
         ggml_set_name(logits, "logits");
         ggml_build_forward_expand(gf, logits);
     } else {

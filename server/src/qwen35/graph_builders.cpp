@@ -1029,7 +1029,7 @@ bool build_lm_head_projection_step(
     ggml_set_input(sg.hidden_input);
 
     sg.gf = ggml_new_graph_custom(sg.ctx, 1024, false);
-    sg.logits = ggml_mul_mat(sg.ctx, w.output, sg.hidden_input);
+    sg.logits = bonsai_matmul(sg.ctx, w.bonsai.get(), w.output, sg.hidden_input);
     ggml_set_name(sg.logits, "draft_projected_logits");
     ggml_set_output(sg.logits);
     sg.argmax_tokens = ggml_argmax(sg.ctx, sg.logits);

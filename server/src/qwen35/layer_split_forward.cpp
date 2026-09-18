@@ -126,7 +126,7 @@ bool compute_target_split_projection(
     ggml_tensor * normed = ggml_rms_norm(
         sg.ctx, rms_norm_input_f32(sg.ctx, act_view), DFLASH27B_RMS_EPS);
     normed = ggml_mul(sg.ctx, normed, graph_tensor_f32(sg.ctx, w.out_norm));
-    ggml_tensor * logits = ggml_mul_mat(sg.ctx, w.output, normed);
+    ggml_tensor * logits = bonsai_matmul(sg.ctx, w.bonsai.get(), w.output, normed);
     ggml_set_name(logits, "target_split_logits");
     sg.logits = logits;
     if (argmax_out) {

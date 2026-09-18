@@ -26,6 +26,7 @@
 
 #include "dflash27b.h"
 #include "common/paged_attention_config.h"
+#include "common/bonsai.h"
 
 namespace dflash::common {
 
@@ -174,6 +175,9 @@ struct CpuEmbedder {
     size_t           row_bytes = 0;             // bytes per row in the quant format
     std::vector<uint8_t> tok_embd_owned;        // optional owned tok_embd payload
 
+    int bonsai_block = 0;
+    std::vector<float> bonsai_signs;
+
     ~CpuEmbedder();
     // Dequantize N rows specified by `ids` into `out_f32` (shape [n_embd, n]).
     // Values are written contiguously row-major (n_embd fast axis).
@@ -187,6 +191,8 @@ struct TargetWeights {
     ggml_backend_buffer_t gate_buf  = nullptr;
     ggml_backend_t        backend = nullptr;
     ggml_backend_buffer_t buf     = nullptr;
+
+    std::shared_ptr<BonsaiState> bonsai;
 
     // CPU-side embedding table (zero GPU cost).
     CpuEmbedder           embedder;

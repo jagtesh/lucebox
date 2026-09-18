@@ -89,6 +89,7 @@ bool CpuEmbedder::embed(const int32_t * ids, int n, float * out_f32) const {
         if (id < 0 || id >= n_vocab) return false;
         const uint8_t * row = tok_embd_bytes + (size_t)id * row_bytes;
         tr->to_float(row, out_f32 + (size_t)i * n_embd, n_embd);
+        if (bonsai_block) bonsai_inverse_embedding(out_f32 + (size_t)i*n_embd, int(n_embd), bonsai_block, bonsai_signs);
     }
     return true;
 }
@@ -332,13 +333,15 @@ bool load_target_gguf_partial(const std::string & path,
         return false;
     }
 
-    // Fail closed while Bonsai graph support is being integrated. Recognizing
-    // the packing must never permit inference without the activation transform.
-    if (gguf_find_key(gctx, "prism.hadamard.version") >= 0) {
-        set_last_error("Bonsai activation transforms are not enabled in this build");
+    auto bonsai = std::make_shared<BonsaiState>();
+    std::string bonsai_error;
+    if (!read_bonsai_metadata(gctx, meta_ctx, bonsai->meta, bonsai_error)) {
+        set_last_error("Bonsai metadata: " + bonsai_error);
+        ggml_free(meta_ctx);
         gguf_free(gctx);
         return false;
     }
+    if (!bonsai->meta.block) bonsai.reset();
 
     // Validate arch + the dimensions we hardcode everywhere.
     std::string arch_str;
@@ -513,6 +516,9 @@ bool load_target_gguf_partial(const std::string & path,
         return false;
     }
 
+    out.bonsai = bonsai;
+    out.embedder.bonsai_block = 0;
+    out.embedder.bonsai_signs.clear();
     out.ctx     = meta_ctx;
     out.backend = backend;
     out.n_layer = (int)n_layer;
@@ -700,7 +706,7 @@ bool load_target_gguf_partial(const std::string & path,
     // GEMV. Only for the plain single-buffer path (the TP meta allocator
     // places tensors itself) and only when the pair shares type/ne0 and the
     // first tensor's byte size keeps the second one aligned.
-    const bool can_stack = !plan.metadata_only && !ggml_backend_buft_is_meta(buft) &&
+    const bool can_stack = !out.bonsai && !plan.metadata_only && !ggml_backend_buft_is_meta(buft) &&
                            std::getenv("DFLASH_QWEN35_NO_STACK") == nullptr;
     if (can_stack) {
         auto find_alloc = [&](const std::string & name) -> int {
@@ -1111,6 +1117,19 @@ bool load_target_gguf_partial(const std::string & path,
     out.embedder.n_vocab        = out.n_vocab;
     out.embedder.row_bytes      = tok_embd_sz / (size_t)out.n_vocab;
 
+    if (out.bonsai) {
+        if (!out.bonsai->allocate(backend)) {
+            set_last_error("Bonsai sign allocation failed");
+            release_out_buffer();
+            return false;
+        }
+        if (out.bonsai->meta.inverse_embedding) {
+            out.embedder.bonsai_block = out.bonsai->meta.block;
+            const auto signs = out.bonsai->meta.signs.find(out.n_embd);
+            if (signs != out.bonsai->meta.signs.end()) out.embedder.bonsai_signs = signs->second;
+        }
+    }
+
     // Stash the total for callers that want to print it
     char summary[192];
     std::snprintf(summary, sizeof(summary),
@@ -1124,6 +1143,9 @@ bool load_target_gguf_partial(const std::string & path,
 }
 
 void free_target_weights(TargetWeights & w) {
+    w.bonsai.reset();
+    w.embedder.bonsai_block = 0;
+    w.embedder.bonsai_signs.clear();
     if (w.buf) { ggml_backend_buffer_free(w.buf); w.buf = nullptr; }
     if (w.ctx) { ggml_free(w.ctx);                w.ctx = nullptr; }
     if (w.stack_ctx) { ggml_free(w.stack_ctx);    w.stack_ctx = nullptr; }
