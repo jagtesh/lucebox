@@ -1,0 +1,9 @@
+{
+  "selected": "bonsai-pq2",
+  "decode_tps": {
+    "bonsai-pq2": 41.09295932413298,
+    "bonsai-ptq1": 31.952098643161914,
+    "bonsai-q2": 40.82728271534003
+  },
+  "rule": "Highest aggregate decode tokens/s across all 16 completed tasks; all six quality checks must pass"
+}
