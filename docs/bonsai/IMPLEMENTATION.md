@@ -13,12 +13,21 @@ Scope: Qwen3.8-derived Bonsai 2 27B GGUF in PQ2_0, PTQ1_0 and upstream Q2_0 pack
 
 Each coherent implementation step is committed after its checks. Do not replace the vendored GGML tree wholesale: Lucebox has independent kernels, type IDs and graph operations to preserve. Do not reuse old-model cache state or timing calibration for Bonsai.
 
-## Current validation boundary
+## Native integration and qualification
 
-- CPU packing round trips, independent wire-layout checks, and GGUF type-42 disambiguation pass. The codec test is registered as `bonsai_codecs`.
-- GPU dequantization functions and the three conversion registrations are ported from Prism `prism-v7`, commit `c1abda39458458ebfb4ec0722bd2224aab26e680`. Their numerical function bodies match that reference. HIP compilation and GPU execution are still pending; conversion support alone does not provide packed matrix multiplication.
-- Packed GPU matrix multiplication and Bonsai activation/embedding transforms remain to be integrated. The loader intentionally rejects Prism rotation metadata until that integration is complete.
-- No Bonsai inference correctness or performance result is claimed, and production is unchanged.
+- CPU wire-layout/round-trip tests preserve Lucebox TurboQuant's existing type 42. Prism wire type 42 is mapped to an internal Q2_0 type only with Prism metadata; PQ2_0/PTQ1_0 have separate internal IDs.
+- The loader validates version, block size, transform/axis, explicit signs and named transformed tensors. Signed normalized Hadamard is applied before folded projections; embedding inversion applies Hadamard then signs. Grouped GDN value channels are reordered before their output projection.
+- HIP decode uses packed matrix-vector kernels. Prefill unpacks only the current matrix tile to shared-memory int8 and uses the existing Q8 matrix machinery. There is no persistent FP16-expanded copy of packed model weights.
+- Graph-local transformed inputs are shared across compatible projections. Ordinary model projections retain their existing path. Bonsai disables stacked aliases that would bypass per-weight transform metadata.
+- Tests pass on R9700/gfx1201: independent dense Hadamard oracle, signed/grouped projections, inverse embedding, malformed metadata rejection, and 12 packed matrix cases (three formats, 1/2/16/64 columns).
+- All three complete 27B models pass fixed-token final-logit comparison with Prism: cosine >= 0.99998, normalized RMSE <= 0.00613, same top five tokens. Incremental versus batched execution also passes. These are finite numerical tests, not bit-identical generation guarantees.
+- Qualification source: `scripts/bonsai/qualify_models.py`; results: `benchmarks/bonsai-vs-swift-20260917/qualification/numerical-results.json`.
+- A first qualification attempt encountered a stale private loader object. Its failed log was retained; the complete committed tree was synchronized and rebuilt before the successful run. Production was automatically restored after both attempts.
+- Benchmarks use native Lucebox for every timed entry. Prism is an independent numerical oracle only. The report records the exact binary and shared GGML hashes.
+
+## Remaining validation boundaries
+
+This qualification covers single-GPU dense Qwen35 inference on gfx1201 with Q8 K/V. Multi-GPU placement, other architectures/devices, long-context cache behavior and all optional KV formats are not qualified by this work. The private build sets FA_ALL_QUANTS=OFF to avoid recompiling unused attention combinations; production has not been replaced. Bonsai DFlash2 requires its own acceptance/quality measurements.
 
 ## Deployment constraints
 
