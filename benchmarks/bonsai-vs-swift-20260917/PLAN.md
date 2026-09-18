@@ -27,3 +27,7 @@ Store model hashes, executable/source identities, exact arguments, logs, respons
 ## DFlash2 follow-up
 
 After the target-only comparison, select the Bonsai packing with the highest aggregate decode tokens/second across all 16 tasks, provided all six quality checks pass and all tasks complete. Run that packing with the existing Qwen DFlash2 drafter (block 16), repeating the same 16 inputs/rubrics. Preserve both phases separately. This tests the previously requested drafter compatibility; it does not assume that shared model ancestry guarantees good acceptance. If no packing qualifies, stop this follow-up and report the failed gate.
+
+### Expanded DFlash2 coverage
+
+The user subsequently requested DFlash2 on all three packings. Preserve the already-running PQ2 follow-up and run PTQ1 and Q2 in a second directory with the same settings and rubric. Final coverage is eight configurations × 16 tasks = 128 requests. Report every result, not only the fastest packing.

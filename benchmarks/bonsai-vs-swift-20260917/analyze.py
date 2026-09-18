@@ -33,16 +33,17 @@ def summarize(rows, expected):
 
 def main():
     rows = json.loads((ROOT/'results.json').read_text()) if (ROOT/'results.json').exists() else []
-    followup = ROOT/'dflash-followup/results.json'
-    if followup.exists():
-        rows += json.loads(followup.read_text())
+    for folder in ('dflash-followup', 'dflash-remaining'):
+        followup = ROOT/folder/'results.json'
+        if followup.exists(): rows += json.loads(followup.read_text())
     for backend in sorted({r['backend'] for r in rows}):
         if backend not in NAMES and backend.endswith('-dflash2'):
             NAMES[backend] = NAMES[backend.removesuffix('-dflash2')]+' + DFlash2'
     suite = json.loads((ROOT/'suite.json').read_text())
     failures = json.loads((ROOT/'failures.json').read_text()) if (ROOT/'failures.json').exists() else []
-    followup_failures=ROOT/'dflash-followup/failures.json'
-    if followup_failures.exists(): failures += json.loads(followup_failures.read_text())
+    for folder in ('dflash-followup', 'dflash-remaining'):
+        followup_failures=ROOT/folder/'failures.json'
+        if followup_failures.exists(): failures += json.loads(followup_failures.read_text())
     summaries, detail = [], []
     for backend, label in NAMES.items():
         rr = [r for r in rows if r['backend']==backend]
@@ -98,7 +99,7 @@ def main():
         '- All reasoning counts come from native usage accounting. Other output tokens include any protocol/control tokens counted by the runtime; they are not necessarily just visible answer text.',
         '- The same xhigh setting does not imply equal reasoning length. Maximum output is 64,000 within a 65,536 context; reaching the length ceiling is not normal completion.',
         '- Post-request VRAM observations are not peak memory measurements. No synthetic throughput microbenchmark or thermal/order randomization is included in this first pass.',
-        '- Target-only results and the separately selected Bonsai DFlash2 follow-up are labelled explicitly. Shared ancestry alone is not treated as evidence of drafter compatibility.',
+        '- Target-only results and the separately executed Bonsai DFlash2 runs are labelled explicitly. Shared ancestry alone is not treated as evidence of drafter compatibility.',
         '- The private build uses the same Q8 K/V kernels for every entry with FA_ALL_QUANTS=OFF. This is not a production deployment.',
         '- Numerical qualification compares fixed-token final logits with Prism and batched versus incremental processing. It does not establish bit-identical long generations or broader model quality.']
     lines.append('- **Prompt counts differ:** inspect `analysis.json`; no equal-token-work claim is made.' if mismatches else '- Prompt counts match Swift for all available matched cases.' if counts else '- Matched prompt-count comparison unavailable.')
