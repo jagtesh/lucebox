@@ -46,6 +46,26 @@ int main() {
         require(ggml_blck_size(type)==n,"block size");
     }
     require(GGML_TYPE_TQ3_0==42 && GGML_TYPE_Q2_0!=42,"legacy TurboQuant type preserved");
+    // Actual GGUF parsing must disambiguate wire id 42 without changing legacy KV.
+    for (bool prism : {false, true}) {
+        auto * file = std::tmpfile();
+        require(file != nullptr, "temporary GGUF file");
+        auto * metadata = gguf_init_empty();
+        if (prism) gguf_set_val_u32(metadata, "prism.hadamard.version", 1);
+        auto * tensor = ggml_new_tensor_1d(ctx, GGML_TYPE_TQ3_0, 128);
+        ggml_set_name(tensor, "wire42.weight");
+        gguf_add_tensor(metadata, tensor);
+        require(gguf_write_to_file_ptr(metadata, file, true), "write wire fixture");
+        std::rewind(file);
+        gguf_init_params read_params = {true, nullptr};
+        auto * parsed = gguf_init_from_file_ptr(file, read_params);
+        require(parsed != nullptr, "parse wire fixture");
+        require(gguf_get_tensor_type(parsed, 0) == (prism ? GGML_TYPE_Q2_0 : GGML_TYPE_TQ3_0),
+                "wire 42 must follow Prism metadata and preserve legacy files");
+        gguf_free(parsed);
+        gguf_free(metadata);
+        std::fclose(file);
+    }
     ggml_free(ctx);
     std::puts("Bonsai codec wire patterns and round trips passed");
 }

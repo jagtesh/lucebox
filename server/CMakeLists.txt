@@ -895,6 +895,12 @@ if(DFLASH27B_TESTS)
     set(_raw_unit_test_targets)
     enable_testing()
 
+    add_executable(test_bonsai_codecs test/test_bonsai_codecs.cpp)
+    target_include_directories(test_bonsai_codecs PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/llama.cpp/ggml/src)
+    target_link_libraries(test_bonsai_codecs PRIVATE ggml-base)
+    add_test(NAME bonsai_codecs COMMAND test_bonsai_codecs)
+
     add_executable(
         test_kernel_qualification_core
         test/test_kernel_qualification_core.cpp)
