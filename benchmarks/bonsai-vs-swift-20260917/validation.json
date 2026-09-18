@@ -1,0 +1,28 @@
+{
+  "tasks": 128,
+  "configurations": 8,
+  "quality_passes": 48,
+  "identical_requests_per_task": true,
+  "prompt_counts_match": true,
+  "thinking_active": true,
+  "cold_cache": true,
+  "speculative_requests": 64,
+  "log_counter_coverage": "64/64",
+  "display_totals_reconciled": true,
+  "browser_checks": [
+    "Chrome rendering and all eight chart series",
+    "No console errors",
+    "Search, answer drill-down and reset",
+    "390px viewport: no page overflow",
+    "Source inspector definitions and evidence",
+    "Final report marked complete"
+  ],
+  "production": {
+    "status": "ok",
+    "active_model": "qwen3.8-27b-swift",
+    "response": "ready",
+    "finish_reason": "stop",
+    "executable_replaced": false,
+    "configuration_replaced": false
+  }
+}

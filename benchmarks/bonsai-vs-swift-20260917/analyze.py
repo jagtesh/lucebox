@@ -90,7 +90,7 @@ def main():
         rr=[r for r in rows if r['backend']==backend]
         rates=[r['response']['usage']['accept_rate'] for r in rr if r['response']['usage'].get('spec_decode_ran')]
         lines.append(f"| {label} | {sum(bool(r['response']['usage'].get('spec_decode_ran')) for r in rr)}/{len(rr)} | {fmt(median(rates)*100 if rates else None)}% |")
-    lines += ['', 'Acceptance is the median of native per-request rates, not a pooled token-weighted acceptance estimate.', '', '## Quality failures', '']
+    lines += ['', 'Acceptance is the median native per-request rate, including the always-committed seed position; it is not pure drafter-token match probability or a pooled token-weighted estimate.', '', '## Quality failures', '']
     bad=[r for r in rows if r['suite']=='quality' and not r['score']['pass']]
     for r in bad:
         lines.append(f"- {NAMES[r['backend']]} / `{r['case']}`: format={r['score']['format_pass']}, answer={r['score']['answer_pass']}, finish={r['response']['choices'][0]['finish_reason']}.")

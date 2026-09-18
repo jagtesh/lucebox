@@ -44,7 +44,7 @@ compact=[];suites=[];speculative=[]
 for s in summary:
  b=s['backend'];rr=[r for r in rows if r['backend']==b and (s['subset']=='all' or r['suite']==s['subset'])]
  quality=[r for r in rr if r['suite']=='quality']
- q=dict(model=labels[b],mode=mode(b),configuration=s['label'],subset=s['subset'],coverage=f"{s['measured']}/{s['expected']}",
+ q=dict(model=labels[b],packing='Swift' if b.startswith('swift') else labels[b].replace('Bonsai ',''),mode=mode(b),configuration=s['label'],subset=s['subset'],coverage=f"{s['measured']}/{s['expected']}",
   complete=s['complete'],wall_s=s['wall_seconds'],prefill_s=s['prefill_seconds'],decode_s=s['decode_seconds'],decode_tps=s['decode_tps'],
   output_tokens=s['generated_tokens'],thinking_tokens=s['thinking_tokens'],other_tokens=s['other_output_tokens'],
   quality=f"{sum(r['score']['pass'] is True for r in quality)}/{len(quality)}" if quality else 'Not scored',
@@ -90,6 +90,24 @@ best_time=min((x for x in compact if x['complete']),key=lambda x:x['wall_s'])
 quality=[r for r in rows if r['suite']=='quality'];passes=sum(r['score']['pass'] is True for r in quality)
 findings=f'''## Executive Summary\n\n- **{best_rate['configuration']} has the highest measured generation rate: {best_rate['decode_tps']:.1f} tokens/s.** {best_time['configuration']} has the lowest suite time: {best_time['wall_s']:.1f} seconds across 16 tasks.\n- **PQ2 and Q2 are effectively tied without DFlash2** at 41.1 and 40.8 tokens/s. PTQ1 uses less memory but reaches 32.0 tokens/s in this implementation.\n- **{passes}/{len(quality)} measured quality checks passed**, including strict JSON and tool formatting. The ten article tasks measure completion, not coding correctness.\n- {'All 128 requested task runs are complete.' if finished else f'{len(rows)}/128 task runs are recorded; the remaining DFlash2 results are pending.'} These are single-pass observations, not statistically established rankings.'''
 recommendations="## Practical conclusion\n\nKeep Swift with DFlash2 as the latency baseline while this comparison is being completed. Bonsai PQ2 and Q2 offer substantially lower memory use, but a smaller GGUF does not guarantee faster task completion. PTQ1's speculative path warrants profiling before deployment; the measured slowdown is real, but these timings alone do not identify the responsible kernel.\n\nBefore making a general quality decision, use a broader coding/retrieval suite. This experiment deliberately preserves the original six strict checks and ten completion-only article prompts."
+if finished:
+    by={x['configuration']:x for x in compact}
+    swift=by['Swift IQ4_XS + DFlash2'];pq=by['Bonsai PQ2_0 + DFlash2'];q2=by['Bonsai Q2_0 + DFlash2'];pt=by['Bonsai PTQ1_0 + DFlash2']
+    findings=f'''## Executive Summary
+
+- **Swift + DFlash2 is fastest in this run:** {swift['decode_tps']:.1f} tokens/s and {swift['wall_s']:.1f} seconds for all 16 tasks.
+- **Bonsai's DFlash2 benefit depends on packing.** PQ2 and Q2 reach {pq['decode_tps']:.1f} and {q2['decode_tps']:.1f} tokens/s, but their longer thinking offsets the throughput gain in total task time. PTQ1 drops to {pt['decode_tps']:.1f} tokens/s and takes {pt['wall_s']:.0f} seconds—about twice its target-only time.
+- **Bonsai uses substantially less memory:** PQ2 + DFlash2 reaches {pq['vram_gib']:.1f} GiB in after-request observations versus {swift['vram_gib']:.1f} GiB for Swift + DFlash2. These are not peak measurements.
+- **All 128 tasks completed and 48/48 strict quality checks passed.** The ten article prompts score completion only. This is one pass, not a statistically established ranking or broad quality evaluation.'''
+    recommendations='''## Practical conclusion
+
+**Keep Swift + DFlash2 for responsiveness on this workload.** It finishes this suite substantially sooner than any Bonsai configuration.
+
+**PQ2 is the most useful Bonsai candidate when memory matters.** Its target-only throughput is effectively tied with Q2, with a smaller file and slightly lower observed allocation. DFlash2 increases its generation rate, but the extra reasoning in this run removes the task-time benefit.
+
+**Do not enable PTQ1 + DFlash2 with the current kernels and defaults.** It is slower than PTQ1 alone despite extensive adaptive fallback. Profile speculative verification, packed prefill and the fallback policy before attempting performance changes; these timings do not isolate a specific kernel as the cause.
+
+For a general quality decision, use a broader coding/retrieval suite. This experiment preserves the original six strict checks and ten completion-only article prompts.'''
 methods='''## Method and interpretation\n\nEvery timed entry runs the same native Lucebox executable on one Radeon AI PRO R9700 (gfx1201, 32 GB). The inputs, frozen chat template and scoring rules are identical. All matched prompt-token counts are checked. Thinking is enabled with xhigh requested; actual thinking length varies by model and numerical path.\n\nTemperature is 0 and seed is 42. Context is 65,536 tokens, with a 64,000-token output ceiling for safety. No response reaching the length ceiling counts as a normal completion. Prefix slots and hybrid caching are disabled; measured cached-prefix counts must remain zero. Idle prefill batches are 512 tokens. DFlash2 uses the existing Qwen Q8 drafter with block size 16. GPU K/V are Q8 in every entry.\n\n**Definitions:** prefill is the backend's prompt-processing phase; decode is its generation phase. Wall time includes request overhead, but excludes model loading and warmup. Output counts include thinking; other output tokens may include control tokens. Throughput is total output tokens divided by total decode seconds, not the average of individual request rates. The native acceptance metric includes the always-committed seed position; it is not pure drafter-token match probability. Its median is taken across requests. DFlash2 retains the existing adaptive controller, which may execute plain-decode bursts; their fraction is reported from server logs.\n\nOne run per task/configuration, fixed configuration order, and different generated lengths limit the comparison. These short prompts do not test long-context compression, cache reuse, or production concurrency. Post-request GPU allocation is not peak VRAM. The private build uses FA_ALL_QUANTS=OFF with the same Q8 attention kernels for every entry. No production executable or configuration is replaced.'''
 output=Path(sys.argv[1]);old=json.loads(output.read_text()) if output.exists() else {}
 snapshot=dict(id=old.get('id'),surface='report',title='Bonsai versus Swift: speed, thinking and DFlash2',generatedAt=when,report={'asOf':datetime.datetime.fromtimestamp(cutoff,ZoneInfo('America/Toronto')).date().isoformat()},status='reviewed',buildStatus='updating' if old.get('id') else 'creating',filters=[],finding=findings,methodsText=methods,recommendations=recommendations,
@@ -101,5 +119,14 @@ snapshot['queries']['packing']=dict(rows=[
 snapshot['queries']['tasks']['payloadColumns']=['raw_response']
 for name,ids,definition in [('summary',['overview','throughput','wall','memory','tokens','findings'],'Configuration totals over the measured subset. Null means unavailable; partial coverage is explicit.'),('suites',['suite-breakdown'],'Separate totals for the six quality and ten completion-only speed tasks.'),('tasks',['task-details','responses'],'One native request per configuration and frozen task; no retries replace failures.'),('speculation',['draft-results'],'Only actual speculative requests contribute to per-request acceptance statistics.')]:
  snapshot['queries'][name]['source']['metricDefinitions']=[dict(label=name,definition=definition,componentIds=ids)]
+if '--complete' in sys.argv:
+    assert finished, 'Cannot finish a partial report'
+    snapshot['buildStatus']='complete'
+(ROOT/'speculation.json').write_text(json.dumps(speculative,indent=2)+'\n')
+notes=['\n'+recommendations,'\n## Adaptive fallback in DFlash2 runs\n','| Model | Plain steps / all steps | Plain step share |','|---|---:|---:|']
+for r in speculative:
+    notes.append(f"| {r['model']} | {r['plain_steps']}/{r['total_steps']} | {r['plain_step_pct']:.1f}% |" if r['plain_step_pct'] is not None else f"| {r['model']} | Unavailable | Unavailable |")
+notes.append('\nThese are decoder-iteration shares, not token or time shares. Native acceptance includes the always-committed seed. The request-level spec_decode_ran flag only establishes that speculation occurred at some point. Counters come from preserved server logs.\n')
+with (ROOT/'REPORT.md').open('a') as f:f.write('\n'.join(notes))
 output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(snapshot,indent=2)+'\n')
 print(f'Reviewed snapshot: {len(rows)} task rows, {len(compact)} configurations')

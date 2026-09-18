@@ -1,0 +1,58 @@
+[
+  {
+    "counter_coverage": "16/16",
+    "plain_step_pct": 0.0,
+    "plain_steps": 0,
+    "total_steps": 1186,
+    "model": "Swift IQ4_XS",
+    "requests": 16,
+    "speculative_requests": 16,
+    "acceptance_pct": 38.029296696186066,
+    "acceptance_min_pct": 32.27040767669678,
+    "acceptance_max_pct": 60.09615659713745,
+    "decode_speedup": 2.638459154412614,
+    "wall_speedup": 2.4768953497294026
+  },
+  {
+    "counter_coverage": "16/16",
+    "plain_step_pct": 27.210884353741495,
+    "plain_steps": 1000,
+    "total_steps": 3675,
+    "model": "Bonsai PQ2_0",
+    "requests": 16,
+    "speculative_requests": 16,
+    "acceptance_pct": 27.5701105594635,
+    "acceptance_min_pct": 20.348836481571198,
+    "acceptance_max_pct": 38.12499940395355,
+    "decode_speedup": 1.426885430026225,
+    "wall_speedup": 0.9467238276463603
+  },
+  {
+    "counter_coverage": "16/16",
+    "plain_step_pct": 69.31502370443027,
+    "plain_steps": 4240,
+    "total_steps": 6117,
+    "model": "Bonsai PTQ1_0",
+    "requests": 16,
+    "speculative_requests": 16,
+    "acceptance_pct": 31.086601316928864,
+    "acceptance_min_pct": 20.348836481571198,
+    "acceptance_max_pct": 38.12499940395355,
+    "decode_speedup": 0.5970268896697073,
+    "wall_speedup": 0.4980506858318134
+  },
+  {
+    "counter_coverage": "16/16",
+    "plain_step_pct": 29.20469361147327,
+    "plain_steps": 1120,
+    "total_steps": 3835,
+    "model": "Bonsai Q2_0",
+    "requests": 16,
+    "speculative_requests": 16,
+    "acceptance_pct": 27.5701105594635,
+    "acceptance_min_pct": 20.348836481571198,
+    "acceptance_max_pct": 38.12499940395355,
+    "decode_speedup": 1.3992906155996325,
+    "wall_speedup": 0.9175428706617934
+  }
+]

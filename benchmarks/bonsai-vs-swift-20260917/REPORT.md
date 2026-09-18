@@ -13,6 +13,9 @@ Every timed entry uses the same native Lucebox build. Bonsai includes its packed
 | Bonsai PTQ1_0 | 16/16 | 6/6 measured | 348.63 | 8.81 | 339.66 | 10853 | 9235 | 31.95 | 0.60× |
 | Bonsai Q2_0 | 16/16 | 6/6 measured | 207.45 | 3.14 | 204.15 | 8335 | 6703 | 40.83 | 1.02× |
 | Swift IQ4_XS + DFlash2 | 16/16 | 6/6 measured | 85.01 | 3.15 | 81.72 | 7322 | 5698 | 89.60 | 2.48× |
+| Bonsai PQ2_0 + DFlash2 | 16/16 | 6/6 measured | 217.97 | 3.18 | 214.63 | 12585 | 10756 | 58.63 | 0.97× |
+| Bonsai PTQ1_0 + DFlash2 | 16/16 | 6/6 measured | 699.99 | 8.75 | 691.07 | 13183 | 11475 | 19.08 | 0.30× |
+| Bonsai Q2_0 + DFlash2 | 16/16 | 6/6 measured | 226.10 | 3.21 | 222.72 | 12724 | 11021 | 57.13 | 0.93× |
 
 ## Six quality tasks
 
@@ -23,6 +26,9 @@ Every timed entry uses the same native Lucebox build. Bonsai includes its packed
 | Bonsai PTQ1_0 | 6/6 | 6/6 measured | 70.26 | 3.03 | 67.17 | 2151 | 2030 | 32.02 | 0.72× |
 | Bonsai Q2_0 | 6/6 | 6/6 measured | 55.81 | 1.18 | 54.57 | 2222 | 2101 | 40.72 | 0.90× |
 | Swift IQ4_XS + DFlash2 | 6/6 | 6/6 measured | 20.85 | 1.17 | 19.63 | 1717 | 1596 | 87.45 | 2.42× |
+| Bonsai PQ2_0 + DFlash2 | 6/6 | 6/6 measured | 42.40 | 1.18 | 41.17 | 2420 | 2299 | 58.78 | 1.19× |
+| Bonsai PTQ1_0 + DFlash2 | 6/6 | 6/6 measured | 176.00 | 2.92 | 173.03 | 2420 | 2299 | 13.99 | 0.29× |
+| Bonsai Q2_0 + DFlash2 | 6/6 | 6/6 measured | 42.82 | 1.19 | 41.59 | 2420 | 2299 | 58.19 | 1.18× |
 
 ## Ten article speed tasks
 
@@ -33,6 +39,9 @@ Every timed entry uses the same native Lucebox build. Bonsai includes its packed
 | Bonsai PTQ1_0 | 10/10 | Not scored | 278.37 | 5.78 | 272.49 | 8702 | 7205 | 31.94 | 0.58× |
 | Bonsai Q2_0 | 10/10 | Not scored | 151.64 | 1.96 | 149.58 | 6113 | 4602 | 40.87 | 1.06× |
 | Swift IQ4_XS + DFlash2 | 10/10 | Not scored | 64.16 | 1.99 | 62.09 | 5605 | 4102 | 90.27 | 2.50× |
+| Bonsai PQ2_0 + DFlash2 | 10/10 | Not scored | 175.57 | 2.01 | 173.46 | 10165 | 8457 | 58.60 | 0.91× |
+| Bonsai PTQ1_0 + DFlash2 | 10/10 | Not scored | 523.99 | 5.84 | 518.03 | 10763 | 9176 | 20.78 | 0.31× |
+| Bonsai Q2_0 + DFlash2 | 10/10 | Not scored | 183.28 | 2.03 | 181.14 | 10304 | 8722 | 56.88 | 0.87× |
 
 Decode rate is total generated tokens divided by total measured decode time, including thinking. Wall time excludes model loading and warmup. Partial totals must not be compared with complete suites. Shorter reasoning can improve task time without faster kernels.
 
@@ -120,14 +129,65 @@ Decode rate is total generated tokens divided by total measured decode time, inc
 | Swift IQ4_XS + DFlash2 | filter_by_substring | 1.92 | 193.3 | 1714.0 | 201 | 88 | completed; correctness unscored |
 | Swift IQ4_XS + DFlash2 | sum_product | 2.89 | 202.1 | 2677.9 | 375 | 219 | completed; correctness unscored |
 | Swift IQ4_XS + DFlash2 | rolling_max | 3.57 | 199.8 | 3363.2 | 396 | 244 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | arithmetic | 20.34 | 204.7 | 20130.1 | 1094 | 1084 | pass |
+| Bonsai PQ2_0 + DFlash2 | constraints | 3.43 | 140.9 | 3283.8 | 178 | 165 | pass |
+| Bonsai PQ2_0 + DFlash2 | code_aliasing | 7.75 | 142.2 | 7601.3 | 479 | 458 | pass |
+| Bonsai PQ2_0 + DFlash2 | code_intervals | 7.70 | 140.9 | 7547.4 | 487 | 460 | pass |
+| Bonsai PQ2_0 + DFlash2 | extraction | 2.09 | 183.0 | 1900.0 | 121 | 112 | pass |
+| Bonsai PQ2_0 + DFlash2 | tool_call | 1.09 | 364.5 | 710.8 | 61 | 20 | pass |
+| Bonsai PQ2_0 + DFlash2 | has_close_elements | 51.29 | 213.5 | 51063.8 | 2902 | 2525 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | separate_paren_groups | 33.40 | 219.4 | 33169.6 | 1826 | 1598 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | truncate_number | 19.42 | 178.5 | 19233.9 | 1101 | 1003 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | below_zero | 5.01 | 204.6 | 4800.6 | 345 | 187 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | mean_absolute_deviation | 36.99 | 205.8 | 36774.4 | 1808 | 1656 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | intersperse | 5.17 | 180.4 | 4983.3 | 439 | 296 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | parse_nested_parens | 9.30 | 207.9 | 9083.0 | 707 | 493 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | filter_by_substring | 3.16 | 180.6 | 2973.6 | 140 | 121 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | sum_product | 6.48 | 207.6 | 6265.2 | 482 | 326 | completed; correctness unscored |
+| Bonsai PQ2_0 + DFlash2 | rolling_max | 5.33 | 207.1 | 5112.3 | 415 | 252 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | arithmetic | 84.91 | 452.5 | 84447.5 | 1094 | 1084 | pass |
+| Bonsai PTQ1_0 + DFlash2 | constraints | 14.34 | 354.0 | 13975.0 | 178 | 165 | pass |
+| Bonsai PTQ1_0 + DFlash2 | code_aliasing | 32.41 | 356.4 | 32044.1 | 479 | 458 | pass |
+| Bonsai PTQ1_0 + DFlash2 | code_intervals | 32.11 | 351.4 | 31753.0 | 487 | 460 | pass |
+| Bonsai PTQ1_0 + DFlash2 | extraction | 8.44 | 565.5 | 7869.4 | 121 | 112 | pass |
+| Bonsai PTQ1_0 + DFlash2 | tool_call | 3.79 | 835.7 | 2944.4 | 61 | 20 | pass |
+| Bonsai PTQ1_0 + DFlash2 | has_close_elements | 116.07 | 594.7 | 115454.9 | 2718 | 2462 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | separate_paren_groups | 89.86 | 596.4 | 89251.7 | 2219 | 1991 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | truncate_number | 81.55 | 560.1 | 80974.7 | 1101 | 1003 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | below_zero | 20.80 | 599.2 | 20188.2 | 345 | 187 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | mean_absolute_deviation | 94.02 | 589.2 | 93418.1 | 2197 | 2045 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | intersperse | 21.62 | 565.3 | 21041.2 | 439 | 296 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | parse_nested_parens | 38.95 | 591.0 | 38347.7 | 707 | 493 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | filter_by_substring | 13.14 | 563.3 | 12566.5 | 140 | 121 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | sum_product | 26.34 | 587.9 | 25747.6 | 482 | 326 | completed; correctness unscored |
+| Bonsai PTQ1_0 + DFlash2 | rolling_max | 21.64 | 590.1 | 21044.3 | 415 | 252 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | arithmetic | 20.72 | 211.1 | 20499.7 | 1094 | 1084 | pass |
+| Bonsai Q2_0 + DFlash2 | constraints | 3.50 | 143.7 | 3346.5 | 178 | 165 | pass |
+| Bonsai Q2_0 + DFlash2 | code_aliasing | 7.79 | 147.1 | 7634.6 | 479 | 458 | pass |
+| Bonsai Q2_0 + DFlash2 | code_intervals | 7.68 | 140.0 | 7534.6 | 487 | 460 | pass |
+| Bonsai Q2_0 + DFlash2 | extraction | 2.06 | 181.4 | 1866.6 | 121 | 112 | pass |
+| Bonsai Q2_0 + DFlash2 | tool_call | 1.07 | 362.7 | 703.4 | 61 | 20 | pass |
+| Bonsai Q2_0 + DFlash2 | has_close_elements | 53.25 | 214.0 | 53022.5 | 2922 | 2554 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | separate_paren_groups | 33.74 | 220.6 | 33502.4 | 1826 | 1598 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | truncate_number | 19.69 | 180.4 | 19494.5 | 1101 | 1003 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | below_zero | 5.04 | 207.9 | 4827.2 | 345 | 187 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | mean_absolute_deviation | 42.00 | 204.9 | 41781.7 | 1927 | 1892 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | intersperse | 5.24 | 186.6 | 5046.0 | 439 | 296 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | parse_nested_parens | 9.47 | 216.8 | 9243.9 | 707 | 493 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | filter_by_substring | 3.22 | 182.6 | 3034.2 | 140 | 121 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | sum_product | 6.34 | 208.7 | 6124.8 | 482 | 326 | completed; correctness unscored |
+| Bonsai Q2_0 + DFlash2 | rolling_max | 5.27 | 206.0 | 5060.5 | 415 | 252 | completed; correctness unscored |
 
 ## DFlash2 verification
 
 | Configuration | Speculation actually ran | Median request acceptance |
 |---|---:|---:|
 | Swift IQ4_XS + DFlash2 | 16/16 | 38.03% |
+| Bonsai PQ2_0 + DFlash2 | 16/16 | 27.57% |
+| Bonsai PTQ1_0 + DFlash2 | 16/16 | 31.09% |
+| Bonsai Q2_0 + DFlash2 | 16/16 | 27.57% |
 
-Acceptance is the median of native per-request rates, not a pooled token-weighted acceptance estimate.
+Acceptance is the median native per-request rate, including the always-committed seed position; it is not pure drafter-token match probability or a pooled token-weighted estimate.
 
 ## Quality failures
 
@@ -138,9 +198,30 @@ No failed quality checks among measured requests; see coverage above.
 - All reasoning counts come from native usage accounting. Other output tokens include any protocol/control tokens counted by the runtime; they are not necessarily just visible answer text.
 - The same xhigh setting does not imply equal reasoning length. Maximum output is 64,000 within a 65,536 context; reaching the length ceiling is not normal completion.
 - Post-request VRAM observations are not peak memory measurements. No synthetic throughput microbenchmark or thermal/order randomization is included in this first pass.
-- Target-only results and the separately selected Bonsai DFlash2 follow-up are labelled explicitly. Shared ancestry alone is not treated as evidence of drafter compatibility.
+- Target-only results and the separately executed Bonsai DFlash2 runs are labelled explicitly. Shared ancestry alone is not treated as evidence of drafter compatibility.
 - The private build uses the same Q8 K/V kernels for every entry with FA_ALL_QUANTS=OFF. This is not a production deployment.
 - Numerical qualification compares fixed-token final logits with Prism and batched versus incremental processing. It does not establish bit-identical long generations or broader model quality.
 - Prompt counts match Swift for all available matched cases.
 
 Evidence: [raw requests and responses](results.json), [CSV measurements](measurements.csv), [launch arguments](launch.json), [provenance](provenance.json), [numerical qualification](qualification/numerical-results.json).
+
+## Practical conclusion
+
+**Keep Swift + DFlash2 for responsiveness on this workload.** It finishes this suite substantially sooner than any Bonsai configuration.
+
+**PQ2 is the most useful Bonsai candidate when memory matters.** Its target-only throughput is effectively tied with Q2, with a smaller file and slightly lower observed allocation. DFlash2 increases its generation rate, but the extra reasoning in this run removes the task-time benefit.
+
+**Do not enable PTQ1 + DFlash2 with the current kernels and defaults.** It is slower than PTQ1 alone despite extensive adaptive fallback. Profile speculative verification, packed prefill and the fallback policy before attempting performance changes; these timings do not isolate a specific kernel as the cause.
+
+For a general quality decision, use a broader coding/retrieval suite. This experiment preserves the original six strict checks and ten completion-only article prompts.
+
+## Adaptive fallback in DFlash2 runs
+
+| Model | Plain steps / all steps | Plain step share |
+|---|---:|---:|
+| Swift IQ4_XS | 0/1186 | 0.0% |
+| Bonsai PQ2_0 | 1000/3675 | 27.2% |
+| Bonsai PTQ1_0 | 4240/6117 | 69.3% |
+| Bonsai Q2_0 | 1120/3835 | 29.2% |
+
+These are decoder-iteration shares, not token or time shares. Native acceptance includes the always-committed seed. The request-level spec_decode_ran flag only establishes that speculation occurred at some point. Counters come from preserved server logs.

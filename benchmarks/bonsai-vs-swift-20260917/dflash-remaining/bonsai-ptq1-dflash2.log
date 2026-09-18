@@ -1,0 +1,203 @@
+[server] loaded chat template from /root/lucebox-bonsai/benchmarks/bonsai-vs-swift-20260917/dflash-remaining/frozen-template.jinja (8952 bytes)
+[server] load balancing disabled; primary=comparison target=auto:0
+[server] loading tokenizer from /root/bonsai2-models/Ternary-Bonsai-2-27B-PTQ1_0.gguf
+[tokenizer] added_tokens: 33 special tokens
+[tokenizer] loaded vocab=248320 merges=247587 bos=248044 eos=248046 eot=248046 pre=qwen35 sp=no
+[server] creating backend...
+[backend_factory] detected arch=qwen35
+ggml_cuda_init: found 1 ROCm devices (Total VRAM: 32624 MiB):
+  Device 0: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+[draft GGUF] DFlash 2 dynamic convs: kernel=2 group=16
+[draft GGUF] DFlash 2 selector enabled: rank=256 top_k=16 vocab=248320
+[dflash-feature] mirror dtype=f32 cap=4096 fc_in=25600
+[server] gguf meta: general.name='Hf' general.architecture='qwen35'
+[model_card] no share/model_cards/ directory found; tried 4 candidate(s)
+[model_card] using family fallback for arch='qwen35'
+[server] effort-tier ceiling = max_ctx(65536) - hard_limit_reply_budget(0) = 65536
+
+[server] ╭─── Configuration ───────────────────────────────────╮
+[server] │  host            = 127.0.0.1
+[server] │  port            = 18217
+[server] │  model           = /root/bonsai2-models/Ternary-Bonsai-2-27B-PTQ1_0.gguf
+[server] │  draft           = /code/models/qwen38/qwen38-dflash2-q8_0.gguf
+[server] │  model_name      = comparison
+[server] │  max_ctx         = 65536
+[server] │  model_card      = family:qwen35
+[server] │  max_tokens      = 64000 (from CLI)
+[server] │  think_max_tokens= 64000 (from CLI)
+[server] │  hard_limit_reply= 0 (from CLI)
+[server] │  effort tiers    = low=3584 (family:qwen35)
+[server] │                    medium=14336 (family:qwen35)
+[server] │                    high=28672 (family:qwen35)
+[server] │                    x-high=64000 (from CLI)
+[server] │                    max=64000 (from CLI)
+[server] │  target_device   = auto:0
+[server] │  target_split    = layer
+[server] │  draft_device    = auto:0
+[server] │  draft_exec      = local
+[server] │  peer_access     = off
+[server] │  chunk           = 512
+[server] │  admission_wait  = 20 ms
+[server] │  fa_window       = 0
+[server] │  ddtree          = off
+[server] │  specla          = off
+[server] │  fast_rollback   = ON
+[server] │  ddtree_budget   = 22
+[server] │  prefix_cache    = 0 slots
+[server] │  agent_turn_cache= off
+[server] │  prefill_cache   = 0 slots
+[server] │  cors            = ON
+[server] │  cache_type_k    = q8_0
+[server] │  cache_type_v    = q8_0
+[server] │  pflash          = off
+[server] │  decode draft    = persistent
+[server] ╰─────────────────────────────────────────────────────╯
+
+[ppp] enabled=1 rearrange=0 lcp_window=8 min_pin=512 max_ephemeral=256
+[server] listening on http://127.0.0.1:18217
+[server] request path=/v1/chat/completions body_bytes=174
+[server] chat chatcmpl_0000000000000000 format=chat stream=false msgs=1 tools=0 prompt_tokens=16 max_tokens=16 max_ctx=65536 thinking=false reasoning_effort=none started_in_thinking=false stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000000 format=chat stream=false prompt_tokens=16 max_tokens=16 tools=0
+[server] chat CACHE chatcmpl_0000000000000000 restore=false slot=-1 prefix_len=0 effective_prompt=16 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[draft-kv] ctx-KV ring active: cap=4096 kv_total=4128 a_step=34 layers=5 f16 cache 80.6 MiB
+[qwen35-spec] DFlash 2 selector active for greedy chain decode (rank=256 top_k=16)
+[spec-decode] tokens=2 time=0.526 s speed=3.80 tok/s steps=1 accepted=2/16 (12.5%) avg_commit=2.00
+[spec-decode] target_forwards=1 forwards_per_token=0.500000 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 1.6 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000000 ok=true in=16 effective_in=16 out=2 1.9s 1.1 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=1.3s decode=0.5s(3.8tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=444
+[server] chat chatcmpl_0000000000000001 format=chat stream=false msgs=1 tools=0 prompt_tokens=118 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000001 format=chat stream=false prompt_tokens=118 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000001 restore=false slot=-1 prefix_len=0 effective_prompt=118 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=1094 time=84.447 s speed=12.95 tok/s steps=290 accepted=1094/4640 (23.6%) avg_commit=3.77
+[spec-decode] target_forwards=290 forwards_per_token=0.265082 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 14.0 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000001 ok=true in=118 effective_in=118 out=1094 84.9s 12.9 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.5s decode=84.4s(13.0tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=363
+[server] chat chatcmpl_0000000000000002 format=chat stream=false msgs=1 tools=0 prompt_tokens=104 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000002 format=chat stream=false prompt_tokens=104 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000002 restore=false slot=-1 prefix_len=0 effective_prompt=104 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=178 time=13.975 s speed=12.74 tok/s steps=48 accepted=178/768 (23.2%) avg_commit=3.71
+[spec-decode] target_forwards=48 forwards_per_token=0.269663 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 6.8 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000002 ok=true in=104 effective_in=104 out=178 14.3s 12.4 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.4s decode=14.0s(12.7tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=369
+[server] chat chatcmpl_0000000000000003 format=chat stream=false msgs=1 tools=0 prompt_tokens=125 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000003 format=chat stream=false prompt_tokens=125 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000003 restore=false slot=-1 prefix_len=0 effective_prompt=125 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=479 time=32.044 s speed=14.95 tok/s steps=110 accepted=479/1760 (27.2%) avg_commit=4.35
+[spec-decode] target_forwards=110 forwards_per_token=0.229645 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 8.1 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000003 ok=true in=125 effective_in=125 out=479 32.4s 14.8 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.4s decode=32.0s(14.9tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=381
+[server] chat chatcmpl_0000000000000004 format=chat stream=false msgs=1 tools=0 prompt_tokens=114 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000004 format=chat stream=false prompt_tokens=114 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000004 restore=false slot=-1 prefix_len=0 effective_prompt=114 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=487 time=31.753 s speed=15.34 tok/s steps=109 accepted=487/1744 (27.9%) avg_commit=4.47
+[spec-decode] target_forwards=109 forwards_per_token=0.223819 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 10.6 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000004 ok=true in=114 effective_in=114 out=487 32.1s 15.2 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.4s decode=31.8s(15.3tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=472
+[server] chat chatcmpl_0000000000000005 format=chat stream=false msgs=1 tools=0 prompt_tokens=130 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000005 format=chat stream=false prompt_tokens=130 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000005 restore=false slot=-1 prefix_len=0 effective_prompt=130 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=121 time=7.869 s speed=15.38 tok/s steps=27 accepted=121/432 (28.0%) avg_commit=4.48
+[spec-decode] target_forwards=27 forwards_per_token=0.223140 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 8.4 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000005 ok=true in=130 effective_in=130 out=121 8.4s 14.3 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=7.9s(15.4tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=509
+[server] chat chatcmpl_0000000000000006 format=chat stream=false msgs=1 tools=1 prompt_tokens=338 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000006 format=chat stream=false prompt_tokens=338 max_tokens=64000 tools=1
+[server] chat CACHE chatcmpl_0000000000000006 restore=false slot=-1 prefix_len=0 effective_prompt=338 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=61 time=2.944 s speed=20.72 tok/s steps=10 accepted=61/160 (38.1%) avg_commit=6.10
+[spec-decode] target_forwards=10 forwards_per_token=0.163934 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 28.7 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000006 ok=true in=338 effective_in=338 out=61 3.8s 16.1 tok/s finish=tool_calls restore=false slot=-1 prefix_len=0 prefill=0.8s decode=2.9s(20.7tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=542
+[server] chat chatcmpl_0000000000000007 format=chat stream=false msgs=1 tools=0 prompt_tokens=177 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000007 format=chat stream=false prompt_tokens=177 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000007 restore=false slot=-1 prefix_len=0 effective_prompt=177 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=2718 time=115.455 s speed=23.54 tok/s steps=1775 accepted=1158/3440 (33.7%) avg_commit=1.53
+[spec-decode] adaptive: 1560 of 1775 steps ran as plain decode (step ratio 8.67, accept threshold 6.14 drafts/step, burst 40)
+[spec-decode] target_forwards=1775 forwards_per_token=0.653054 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 112.6 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000007 ok=true in=177 effective_in=177 out=2718 116.1s 23.4 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=115.5s(23.5tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=766
+[server] chat chatcmpl_0000000000000008 format=chat stream=false msgs=1 tools=0 prompt_tokens=187 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000008 format=chat stream=false prompt_tokens=187 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000008 restore=false slot=-1 prefix_len=0 effective_prompt=187 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=2219 time=89.252 s speed=24.86 tok/s steps=1403 accepted=979/2608 (37.5%) avg_commit=1.58
+[spec-decode] adaptive: 1240 of 1403 steps ran as plain decode (step ratio 9.00, accept threshold 6.40 drafts/step, burst 40)
+[spec-decode] target_forwards=1403 forwards_per_token=0.632267 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 86.8 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000008 ok=true in=187 effective_in=187 out=2219 89.9s 24.7 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=89.3s(24.9tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=527
+[server] chat chatcmpl_0000000000000009 format=chat stream=false msgs=1 tools=0 prompt_tokens=138 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000009 format=chat stream=false prompt_tokens=138 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000009 restore=false slot=-1 prefix_len=0 effective_prompt=138 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=1101 time=80.975 s speed=13.60 tok/s steps=277 accepted=1101/4432 (24.8%) avg_commit=3.97
+[spec-decode] target_forwards=277 forwards_per_token=0.251589 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 12.1 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000009 ok=true in=138 effective_in=138 out=1101 81.5s 13.5 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=81.0s(13.6tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=667
+[server] chat chatcmpl_000000000000000a format=chat stream=false msgs=1 tools=0 prompt_tokens=180 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_000000000000000a format=chat stream=false prompt_tokens=180 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_000000000000000a restore=false slot=-1 prefix_len=0 effective_prompt=180 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=345 time=20.188 s speed=17.09 tok/s steps=69 accepted=345/1104 (31.2%) avg_commit=5.00
+[spec-decode] target_forwards=69 forwards_per_token=0.200000 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 15.3 MiB from device pools
+[server] chat DONE chatcmpl_000000000000000a ok=true in=180 effective_in=180 out=345 20.8s 16.6 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=20.2s(17.1tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=629
+[server] chat chatcmpl_000000000000000b format=chat stream=false msgs=1 tools=0 prompt_tokens=172 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_000000000000000b format=chat stream=false prompt_tokens=172 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_000000000000000b restore=false slot=-1 prefix_len=0 effective_prompt=172 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=2197 time=93.418 s speed=23.52 tok/s steps=1593 accepted=757/2448 (30.9%) avg_commit=1.38
+[spec-decode] adaptive: 1440 of 1593 steps ran as plain decode (step ratio 9.04, accept threshold 6.43 drafts/step, burst 40)
+[spec-decode] target_forwards=1593 forwards_per_token=0.725080 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 82.8 MiB from device pools
+[server] chat DONE chatcmpl_000000000000000b ok=true in=172 effective_in=172 out=2197 94.0s 23.4 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=93.4s(23.5tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=506
+[server] chat chatcmpl_000000000000000c format=chat stream=false msgs=1 tools=0 prompt_tokens=156 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_000000000000000c format=chat stream=false prompt_tokens=156 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_000000000000000c restore=false slot=-1 prefix_len=0 effective_prompt=156 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=439 time=21.041 s speed=20.86 tok/s steps=72 accepted=439/1152 (38.1%) avg_commit=6.10
+[spec-decode] target_forwards=72 forwards_per_token=0.164009 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 10.1 MiB from device pools
+[server] chat DONE chatcmpl_000000000000000c ok=true in=156 effective_in=156 out=439 21.6s 20.3 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=21.0s(20.9tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=711
+[server] chat chatcmpl_000000000000000d format=chat stream=false msgs=1 tools=0 prompt_tokens=191 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_000000000000000d format=chat stream=false prompt_tokens=191 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_000000000000000d restore=false slot=-1 prefix_len=0 effective_prompt=191 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=707 time=38.348 s speed=18.44 tok/s steps=131 accepted=707/2096 (33.7%) avg_commit=5.40
+[spec-decode] target_forwards=131 forwards_per_token=0.185290 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 16.2 MiB from device pools
+[server] chat DONE chatcmpl_000000000000000d ok=true in=191 effective_in=191 out=707 38.9s 18.2 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=38.3s(18.4tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=527
+[server] chat chatcmpl_000000000000000e format=chat stream=false msgs=1 tools=0 prompt_tokens=147 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_000000000000000e format=chat stream=false prompt_tokens=147 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_000000000000000e restore=false slot=-1 prefix_len=0 effective_prompt=147 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=140 time=12.566 s speed=11.14 tok/s steps=43 accepted=140/688 (20.3%) avg_commit=3.26
+[spec-decode] target_forwards=43 forwards_per_token=0.307143 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 9.5 MiB from device pools
+[server] chat DONE chatcmpl_000000000000000e ok=true in=147 effective_in=147 out=140 13.1s 10.7 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=12.6s(11.1tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=594
+[server] chat chatcmpl_000000000000000f format=chat stream=false msgs=1 tools=0 prompt_tokens=183 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_000000000000000f format=chat stream=false prompt_tokens=183 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_000000000000000f restore=false slot=-1 prefix_len=0 effective_prompt=183 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=482 time=25.748 s speed=18.72 tok/s steps=88 accepted=482/1408 (34.2%) avg_commit=5.48
+[spec-decode] target_forwards=88 forwards_per_token=0.182573 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 15.6 MiB from device pools
+[server] chat DONE chatcmpl_000000000000000f ok=true in=183 effective_in=183 out=482 26.3s 18.3 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=25.7s(18.7tok/s) error=- detail=-
+[server] request path=/v1/chat/completions body_bytes=556
+[server] chat chatcmpl_0000000000000010 format=chat stream=false msgs=1 tools=0 prompt_tokens=172 max_tokens=64000 max_ctx=65536 thinking=true reasoning_effort=x-high started_in_thinking=true stops=0 model=comparison
+[server] chat START chatcmpl_0000000000000010 format=chat stream=false prompt_tokens=172 max_tokens=64000 tools=0
+[server] chat CACHE chatcmpl_0000000000000010 restore=false slot=-1 prefix_len=0 effective_prompt=172 pflash=false disk_policy=full disk_hit=false snap_slot=-1 snap_pos=0 full_snap_slot=-1 full_snap_pos=0
+[spec-decode] tokens=415 time=21.044 s speed=19.72 tok/s steps=72 accepted=415/1152 (36.0%) avg_commit=5.76
+[spec-decode] target_forwards=72 forwards_per_token=0.173494 forwards_per_step=1.000
+[vram] released scratch buffers; trimmed 14.6 MiB from device pools
+[server] chat DONE chatcmpl_0000000000000010 ok=true in=172 effective_in=172 out=415 21.6s 19.2 tok/s finish=stop restore=false slot=-1 prefix_len=0 prefill=0.6s decode=21.0s(19.7tok/s) error=- detail=-
+[loader] eos_id=248046 eos_chat_id=-1
+[target] target loaded: layers [0,64) output=1, 850 tensors on GPU 5.27 GiB, tok_embd 265 MiB CPU-only (ptq1_0)
+[draft]  loaded
+[draft]  target capture layers from drafter GGUF: 5 19 33 47 61
+[draft]  block size override: 8 -> 16 (beyond the published horizon; exact greedy verify)

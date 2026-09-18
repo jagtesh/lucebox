@@ -27,7 +27,7 @@ Each coherent implementation step is committed after its checks. Do not replace 
 
 ## Remaining validation boundaries
 
-This qualification covers single-GPU dense Qwen35 inference on gfx1201 with Q8 K/V. Multi-GPU placement, other architectures/devices, long-context cache behavior and all optional KV formats are not qualified by this work. The private build sets FA_ALL_QUANTS=OFF to avoid recompiling unused attention combinations; production has not been replaced. Bonsai DFlash2 requires its own acceptance/quality measurements.
+This qualification covers single-GPU dense Qwen35 inference on gfx1201 with Q8 K/V. Multi-GPU placement, other architectures/devices, long-context cache behavior and all optional KV formats are not qualified by this work. The private build sets FA_ALL_QUANTS=OFF to avoid recompiling unused attention combinations; production has not been replaced. Bonsai DFlash2 is now measured for all three packings: 16 identical tasks per configuration, with all six strict quality checks passing. This is finite functional validation, not proof of bit-identical speculative generation. The full eight-configuration comparison is in `benchmarks/bonsai-vs-swift-20260917/REPORT.md`. PTQ1 with DFlash2 is slower than target-only and is not recommended with the current kernels/defaults. Production was restored to Swift with DFlash2; its executable and configuration remain unchanged.
 
 ## Deployment constraints
 
