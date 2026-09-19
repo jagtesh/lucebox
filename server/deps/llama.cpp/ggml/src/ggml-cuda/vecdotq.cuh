@@ -136,6 +136,20 @@ static __device__ __forceinline__ int q2_0_symbols4_hip(const uint32_t b) {
 }
 #endif
 
+#if defined(GGML_USE_MUSA)
+// MUSA does not provide CUDA's __byte_perm intrinsic. Keep the packed-weight
+// format identical and unpack four 2-bit symbols with ordinary integer ops.
+static __device__ __forceinline__ int q2_0_symbols4_musa(const uint32_t b) {
+    uint32_t result = 0;
+#pragma unroll
+    for (int lane = 0; lane < 4; ++lane) {
+        const uint32_t symbol = (b >> (2 * lane)) & 0x3u;
+        result |= ((symbol - 1u) & 0xFFu) << (8 * lane);
+    }
+    return (int) result;
+}
+#endif
+
 static __device__ __forceinline__ float vec_dot_q2_0_q8_1(
     const void * __restrict__ vbq, const block_q8_1 * __restrict__ bq8_1, const int & kbx, const int & iqs) {
 
@@ -161,6 +175,9 @@ static __device__ __forceinline__ float vec_dot_q2_0_q8_1(
 #if defined(GGML_USE_HIP) && defined(__HIP_DEVICE_COMPILE__)
         const int qx = q2_0_symbols4_hip((uint32_t) q & 0xFFu);
         const int qy = q2_0_symbols4_hip(((uint32_t) q >> 8) & 0xFFu);
+#elif defined(GGML_USE_MUSA)
+        const int qx = q2_0_symbols4_musa((uint32_t) q & 0xFFu);
+        const int qy = q2_0_symbols4_musa(((uint32_t) q >> 8) & 0xFFu);
 #else
         // unpack even and odd crumbs into byte values
         const int qe = __byte_perm(0x020100FF, 0x020100FF, q >> 0);
@@ -179,7 +196,7 @@ static __device__ __forceinline__ float vec_dot_q2_0_q8_1(
     return d2 * d8 * sumi;
 }
 
-#if !defined(GGML_USE_HIP)
+#if !defined(GGML_USE_HIP) && !defined(GGML_USE_MUSA)
 template <int ncols_dst>
 static __device__ __forceinline__ void vec_dot_ptq1_0_q8_1_multi(const void * __restrict__ vbq,
                                                                  const block_q8_1 * __restrict__ bq8_1,
@@ -271,7 +288,7 @@ static __device__ __forceinline__ float vec_dot_ptq1_0_q8_1(const void * __restr
                                                             const block_q8_1 * __restrict__ bq8_1,
                                                             const int & kbx,
                                                             const int & iqs) {
-#if defined(GGML_USE_HIP)
+#if defined(GGML_USE_HIP) || defined(GGML_USE_MUSA)
     const block_ptq1_0 * bq      = (const block_ptq1_0 *) vbq + kbx;
     int                  sumi[4] = { 0, 0, 0, 0 };
 
@@ -350,6 +367,9 @@ static __device__ __forceinline__ float vec_dot_pq2_0_q8_1(const void * __restri
 #if defined(GGML_USE_HIP) && defined(__HIP_DEVICE_COMPILE__)
         const int qx = q2_0_symbols4_hip((uint32_t) q & 0xFFu);
         const int qy = q2_0_symbols4_hip(((uint32_t) q >> 8) & 0xFFu);
+#elif defined(GGML_USE_MUSA)
+        const int qx = q2_0_symbols4_musa((uint32_t) q & 0xFFu);
+        const int qy = q2_0_symbols4_musa(((uint32_t) q >> 8) & 0xFFu);
 #else
         const int qe = __byte_perm(0x020100FF, 0x020100FF, q >> 0);
         const int qo = __byte_perm(0x020100FF, 0x020100FF, q >> 2);
