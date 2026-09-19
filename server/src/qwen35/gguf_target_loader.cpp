@@ -82,6 +82,7 @@ CpuEmbedder::~CpuEmbedder() {
 
 bool CpuEmbedder::embed(const int32_t * ids, int n, float * out_f32) const {
     if (!tok_embd_bytes || tok_embd_type == GGML_TYPE_COUNT) return false;
+    if (bonsai_block && bonsai_signs.size() != (size_t)n_embd) return false;
     const ggml_type_traits * tr = ggml_get_type_traits(tok_embd_type);
     if (!tr || !tr->to_float) return false;
     for (int i = 0; i < n; i++) {
@@ -1099,6 +1100,27 @@ bool load_target_gguf_partial(const std::string & path,
         release_out_buffer();
         return false;
     }
+    if (!out.tok_embd || out.tok_embd->ne[0] != out.n_embd ||
+        out.tok_embd->ne[1] != out.n_vocab) {
+        char buf[224];
+        std::snprintf(buf, sizeof(buf),
+            "token_embd.weight shape [%lld,%lld] does not match model [%d,%d]",
+            out.tok_embd ? (long long)out.tok_embd->ne[0] : -1LL,
+            out.tok_embd ? (long long)out.tok_embd->ne[1] : -1LL,
+            out.n_embd, out.n_vocab);
+        set_last_error(buf);
+        release_out_buffer();
+        return false;
+    }
+    if (out.bonsai && out.bonsai->meta.inverse_embedding) {
+        const auto signs = out.bonsai->meta.signs.find(out.n_embd);
+        if (signs == out.bonsai->meta.signs.end() ||
+            signs->second.size() != (size_t)out.n_embd) {
+            set_last_error("Bonsai inverse embedding requires a sign vector matching n_embd");
+            release_out_buffer();
+            return false;
+        }
+    }
 
     // ── 5. Copy token_embd bytes to owned host memory so we do not keep the
     //       entire GGUF mmap resident just for CPU embedding lookup.
@@ -1126,7 +1148,7 @@ bool load_target_gguf_partial(const std::string & path,
         if (out.bonsai->meta.inverse_embedding) {
             out.embedder.bonsai_block = out.bonsai->meta.block;
             const auto signs = out.bonsai->meta.signs.find(out.n_embd);
-            if (signs != out.bonsai->meta.signs.end()) out.embedder.bonsai_signs = signs->second;
+            out.embedder.bonsai_signs = signs->second;
         }
     }
 
