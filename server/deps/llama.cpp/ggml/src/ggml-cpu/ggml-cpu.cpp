@@ -450,8 +450,22 @@ static bool ggml_backend_cpu_device_supports_op(ggml_backend_dev_t dev, const st
                 op->type != GGML_TYPE_IQ1_S   &&
                 op->type != GGML_TYPE_IQ1_M; // missing type_traits.from_float
         case GGML_OP_MUL_MAT:
-        case GGML_OP_MUL_MAT_GROUPED_SRC:
-            return src1->type == GGML_TYPE_F32 || src1->type == ggml_get_type_traits_cpu(src0->type)->vec_dot_type;
+        case GGML_OP_MUL_MAT_GROUPED_SRC: {
+            const auto * traits = ggml_get_type_traits_cpu(src0->type);
+            // A type's generic GGML traits can support serialization and
+            // dequantization without the CPU backend having a matmul kernel.
+            // Do not admit such operations: the executor would otherwise call
+            // a null vec_dot function (and the zero-initialized vec_dot_type
+            // can misleadingly look like F32 support).
+            if (traits->vec_dot == nullptr) {
+                return false;
+            }
+            if (src1->type == traits->vec_dot_type) {
+                return true;
+            }
+            return src1->type == GGML_TYPE_F32 &&
+                   ggml_get_type_traits_cpu(traits->vec_dot_type)->from_float != nullptr;
+        }
         case GGML_OP_SOFT_MAX_BACK: {
             if (op->src[0]->type != GGML_TYPE_F32 || op->src[1]->type != GGML_TYPE_F32) {
                 return false;

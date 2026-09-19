@@ -901,6 +901,10 @@ if(DFLASH27B_TESTS)
     target_link_libraries(test_bonsai_codecs PRIVATE ggml-base)
     add_test(NAME bonsai_codecs COMMAND test_bonsai_codecs)
 
+    add_executable(test_bonsai_cpu_admission test/test_bonsai_cpu_admission.cpp)
+    target_link_libraries(test_bonsai_cpu_admission PRIVATE ggml)
+    add_test(NAME bonsai_cpu_admission COMMAND test_bonsai_cpu_admission)
+
     add_executable(test_bonsai_wht test/test_bonsai_wht.cpp)
     target_include_directories(test_bonsai_wht PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_link_libraries(test_bonsai_wht PRIVATE ggml)
