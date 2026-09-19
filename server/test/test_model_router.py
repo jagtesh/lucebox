@@ -146,4 +146,20 @@ class RouterTests(unittest.IsolatedAsyncioTestCase):
         r=await self.client.get('/readyz');self.assertEqual((await r.json())['status'],'ok')
         r=await self.client.get('/v1/models');self.assertEqual((await r.json())['data'][0]['context_length'],131072)
 
+    async def test_maintenance_closes_admission_before_drain(self):
+        first=asyncio.create_task(self.post('hold'))
+        await self.entered.wait()
+        drain=asyncio.create_task(self.client.post('/admin/maintenance',json={'enabled':True}))
+        while not self.router.maintenance: await asyncio.sleep(0.005)
+        rejected=await self.post()
+        self.assertEqual(rejected.status,503)
+        self.assertEqual((await rejected.json())['error']['code'],'maintenance')
+        self.release.set()
+        response=await first;await response.read()
+        result=await drain
+        self.assertEqual(result.status,200)
+        self.assertEqual((await result.json())['active_requests'],0)
+        health=await self.client.get('/health')
+        self.assertTrue((await health.json())['maintenance'])
+
 if __name__=='__main__':unittest.main(verbosity=2)

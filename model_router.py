@@ -127,6 +127,7 @@ class Router:
         self.inflight = 0
         self.recycle_pending = False
         self.pending = 0
+        self.maintenance = False
         self.closing = False
         self.loading = False
         self.counts = Counter()
@@ -280,7 +281,33 @@ class Router:
             except (ClientError,asyncio.TimeoutError):
                 ready, status = False, 'unresponsive'
         return web.json_response({'status':status,'active_model':self.active,'busy':bool(self.inflight or self.lock.locked()),'active_requests':self.inflight,'max_concurrency':self.capacity,
+                                  'maintenance':self.maintenance,
                                   'pending_requests':self.pending,'counters':dict(self.counts)},status=200 if ready else 503,headers=CORS)
+
+    async def maintenance_control(self, request):
+        # This administrative transition is deliberately loopback-only. It
+        # closes admission before waiting, so observing idle afterwards is an
+        # atomic drain rather than a racy health-check snapshot.
+        if request.remote not in ('127.0.0.1', '::1'):
+            return self.error(403, 'forbidden', 'Maintenance control is loopback-only')
+        try:
+            body = await request.json()
+        except ValueError:
+            return self.error(400, 'invalid_request', 'Expected a JSON object')
+        enabled = body.get('enabled') if isinstance(body, dict) else None
+        if type(enabled) is not bool:
+            return self.error(400, 'invalid_request', 'enabled must be boolean')
+        self.maintenance = enabled
+        if enabled:
+            deadline = time.monotonic() + 60
+            while self.pending or self.inflight or self.lock.locked():
+                if time.monotonic() >= deadline:
+                    self.maintenance = False
+                    return self.error(503, 'drain_timeout', 'Existing requests did not drain')
+                await asyncio.sleep(0.05)
+        return web.json_response({'maintenance':self.maintenance,
+                                  'active_requests':self.inflight,
+                                  'pending_requests':self.pending}, headers=CORS)
 
     async def client_watch(self, request):
         while True:
@@ -502,6 +529,8 @@ class Router:
             return web.json_response({'object':'list','data':[{'id':n,'object':'model','owned_by':'local','context_length':c['context'],'max_context_length':c['context']} for n,c in self.models.items()]},headers=CORS)
         if request.path in ('/health','/readyz','/livez'):
             return await self.health(request)
+        if request.method == 'POST' and request.path == '/admin/maintenance':
+            return await self.maintenance_control(request)
         if request.method != 'POST':
             state = ForwardState()
             try:
@@ -511,6 +540,8 @@ class Router:
                 return await self.fail_forward(state,503,'backend_unavailable','Backend unavailable')
         if self.closing:
             return self.error(503,'shutting_down','Server is shutting down')
+        if self.maintenance:
+            return self.error(503,'maintenance','Server is draining for maintenance')
         if self.pending >= self.limits['max_queue']+self.capacity:
             self.counts['queue_rejected'] += 1
             return self.error(429,'server_busy','Inference queue is full; retry later')

@@ -33,6 +33,13 @@ def drain_gpu():
         time.sleep(.2)
     raise RuntimeError('GPU allocations did not drain')
 
+def maintenance(enabled):
+    request=urllib.request.Request('http://127.0.0.1:8216/admin/maintenance',
+        data=json.dumps(dict(enabled=enabled)).encode(),headers={'Content-Type':'application/json'})
+    with urllib.request.urlopen(request,timeout=70) as response:
+        result=json.load(response)
+    assert result.get('maintenance') is enabled,result
+
 def main():
     ROOT.mkdir(exist_ok=True)
     assert not (ROOT/'results.json').exists(),'Do not overwrite previous qualification evidence'
@@ -40,29 +47,41 @@ def main():
     # exact IDs, zero initial state and Q8 K/V in both independent runtimes.
     tokens=[151644,872,198,9707,11,576,374,264,1296,13,151645,198,151644,77091,198,100,200]
     (ROOT/'tokens.txt').write_text(' '.join(map(str,tokens))+'\n')
-    h=json.load(urllib.request.urlopen('http://127.0.0.1:8216/health',timeout=10))
-    assert not h.get('busy') and not h.get('active_requests') and not h.get('pending_requests'),h
     results=[]
-    subprocess.run(['systemctl','stop','lucebox.service'],check=True)
+    service_stopped=False
     try:
-        drain_gpu()
-        for label,filename in MODELS:
-            model='/root/bonsai2-models/'+filename
-            for runtime,executable,chunk in [('prism',PRISM,32),('luce',LUCE,32),('luce',LUCE,1)]:
-                name=f'{label}-{runtime}-{chunk}'
-                (ROOT/'progress.json').write_text(json.dumps(dict(running=name)))
-                command=[executable,model,str(ROOT/'tokens.txt'),str(chunk),str(ROOT/(name+'.f32'))]
-                with (ROOT/(name+'.log')).open('w') as log:
-                    subprocess.run(command,env=ENV,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=240)
+        maintenance(True)
+        try:
+            subprocess.run(['systemctl','stop','lucebox.service'],check=True)
+            service_stopped=True
+            drain_gpu()
+            for label,filename in MODELS:
+                model='/root/bonsai2-models/'+filename
+                for runtime,executable,chunk in [('prism',PRISM,32),('luce',LUCE,32),('luce',LUCE,1)]:
+                    name=f'{label}-{runtime}-{chunk}'
+                    (ROOT/'progress.json').write_text(json.dumps(dict(running=name)))
+                    command=[executable,model,str(ROOT/'tokens.txt'),str(chunk),str(ROOT/(name+'.f32'))]
+                    try:
+                        with (ROOT/(name+'.log')).open('w') as log:
+                            subprocess.run(command,env=ENV,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=240)
+                    finally:
+                        drain_gpu()
+                row=dict(model=label,reference=compare(ROOT/f'{label}-luce-32.f32',ROOT/f'{label}-prism-32.f32'),
+                         chunking=compare(ROOT/f'{label}-luce-1.f32',ROOT/f'{label}-luce-32.f32'))
+                results.append(row)
+                (ROOT/'results.json').write_text(json.dumps(results,indent=2)+'\n')
+                print(json.dumps(row),flush=True)
+                assert row['reference']['passed'] and row['chunking']['passed'], 'Numerical qualification failed'
+        finally:
+            if service_stopped:
                 drain_gpu()
-            row=dict(model=label,reference=compare(ROOT/f'{label}-luce-32.f32',ROOT/f'{label}-prism-32.f32'),
-                     chunking=compare(ROOT/f'{label}-luce-1.f32',ROOT/f'{label}-luce-32.f32'))
-            results.append(row)
-            (ROOT/'results.json').write_text(json.dumps(results,indent=2)+'\n')
-            print(json.dumps(row),flush=True)
-            assert row['reference']['passed'] and row['chunking']['passed'], 'Numerical qualification failed'
-    finally:
-        subprocess.run(['systemctl','start','lucebox.service'],check=True)
+                subprocess.run(['systemctl','start','lucebox.service'],check=True)
+            else:
+                maintenance(False)
+    except BaseException as exc:
+        (ROOT/'progress.json').write_text(json.dumps(dict(failed=True,error=f'{type(exc).__name__}: {exc}',models_compared=len(results))))
+        raise
+    else:
         (ROOT/'progress.json').write_text(json.dumps(dict(finished=True,models_compared=len(results))))
 
 if __name__=='__main__':main()
