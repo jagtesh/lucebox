@@ -15,13 +15,15 @@ def fmt(x, digits=2):
     return '—' if x is None else f'{x:.{digits}f}'
 
 
-def summarize(rows, expected):
+def summarize(rows, expected_ids):
     def total(key, scale=1):
         return sum(r[key] for r in rows)/scale if rows and all(r.get(key) is not None for r in rows) else None
     decode = total('decode_ms', 1000)
     tokens = total('total_tokens')
     thinking = total('reasoning_tokens_native')
-    return dict(measured=len(rows), expected=expected, complete=len(rows)==expected,
+    observed_ids = {r['case'] for r in rows}
+    return dict(measured=len(rows), expected=len(expected_ids), complete=observed_ids==expected_ids and len(rows)==len(expected_ids),
+        missing_cases=sorted(expected_ids-observed_ids), unexpected_cases=sorted(observed_ids-expected_ids),
         completed=sum(bool(r['score']['completed']) for r in rows),
         passed=sum(r['score']['pass'] is True for r in rows),
         wall_seconds=total('wall_seconds'), prefill_seconds=total('prefill_ms', 1000),
@@ -50,8 +52,8 @@ def main():
         assert len({r['case'] for r in rr})==len(rr), f'Duplicate cases: {backend}'
         for subset in ('all', 'quality', 'speed'):
             selected = [r for r in rr if subset=='all' or r['suite']==subset]
-            expected = sum(subset=='all' or c['suite']==subset for c in suite['cases'])
-            summaries.append(dict(backend=backend, label=label, subset=subset, **summarize(selected, expected)))
+            expected_ids = {c['id'] for c in suite['cases'] if subset=='all' or c['suite']==subset}
+            summaries.append(dict(backend=backend, label=label, subset=subset, **summarize(selected, expected_ids)))
         for r in rr:
             detail.append({k:r.get(k) for k in ('backend','case','suite','wall_seconds','prefill_ms','decode_ms','prompt_tokens','total_tokens','reasoning_tokens_native')}
                 | dict(finish_reason=r['response']['choices'][0]['finish_reason'], **r['score']))

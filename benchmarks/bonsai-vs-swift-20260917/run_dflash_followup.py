@@ -23,8 +23,9 @@ def main():
     parent=Path(__file__).resolve().parent
     selected,rates=select(json.loads((parent/'results.json').read_text()))
     destination=parent/'dflash-followup'
-    destination.mkdir(exist_ok=True)
-    assert not (destination/'results.json').exists(), 'Preserve prior followup evidence'
+    if destination.exists():
+        raise FileExistsError('Preserve prior followup evidence: '+str(destination))
+    destination.mkdir()
     for name in ('suite.json','frozen-template.jinja','source-revision.txt'):
         shutil.copyfile(parent/name,destination/name)
     (destination/'selection.json').write_text(json.dumps(dict(selected=selected,decode_tps=rates,

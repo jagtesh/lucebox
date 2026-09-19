@@ -33,6 +33,31 @@ def save(name, obj):
     tmp.replace(ROOT / name)
 
 
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for block in iter(lambda: stream.read(8 * 1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def model_provenance(models, verified_manifest):
+    verified = {entry['file']:entry for entry in verified_manifest}
+    digests = {}
+    result = {}
+    for name, value in models.items():
+        path = Path(value)
+        digest = digests.get(str(path))
+        if digest is None:
+            digest = digests[str(path)] = sha256_file(path)
+        if name.startswith('bonsai-'):
+            entry = verified.get(path.name)
+            if entry is None or entry.get('sha256') != digest or entry.get('bytes') != path.stat().st_size:
+                raise RuntimeError(f'Bonsai model does not match verified-models.json: {path}')
+        result[name] = dict(path=str(path), bytes=path.stat().st_size, sha256=digest)
+    return result
+
+
 def call(path, body=None, port=PORT, timeout=900):
     req = urllib.request.Request(f'http://127.0.0.1:{port}{path}',
         data=None if body is None else json.dumps(body).encode(),
@@ -119,14 +144,15 @@ def main():
     assert subprocess.run(['systemctl', 'is-active', '--quiet', 'lucebox.service']).returncode == 0
     args = {n: launch_args(n, m) for n, m in MODELS.items()}
     save('launch.json', args)
+    verified_bonsai=json.loads(Path('/root/bonsai2-models/verified-models.json').read_text())
+    models_provenance=model_provenance(MODELS,verified_bonsai)
     save('provenance.json', dict(start_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         oracle_prism_revision=PRISM_REV, suite_sha256=SUITE_HASH, repetitions_tasks=1,
         native_executable_sha256=hashlib.sha256((BUILD/'dflash_server').read_bytes()).hexdigest(),
         native_source_revision=(ROOT/'source-revision.txt').read_text().strip(),
         harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         template_sha256=hashlib.sha256((ROOT/'frozen-template.jinja').read_bytes()).hexdigest(),
-        initial_health=health, models={n:dict(path=m,bytes=Path(m).stat().st_size) for n,m in MODELS.items()},
-        verified_bonsai=json.loads(Path('/root/bonsai2-models/verified-models.json').read_text())))
+        initial_health=health, models=models_provenance, verified_bonsai=verified_bonsai))
     rows, failures = [], []
     p = None
     subprocess.run(['systemctl', 'stop', 'lucebox.service'], check=True)
